@@ -4,28 +4,34 @@ name: Publish to pub.dev
 on:
   push:
     tags:
-      - 'v*'   # GitHub 只能用 glob 捕获 tag
+      - 'v*'   # 捕获所有 v 开头的 tag，具体格式在 validate-tag job 中校验
 
 jobs:
-  publish:
+  # Step 1: 校验 tag 格式
+  validate-tag:
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write # Required for authentication using OIDC
+    outputs:
+      valid-tag: ${{ steps.check-tag.outputs.valid }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Validate tag format
+      - name: Check tag format
+        id: check-tag
         run: |
           echo "Tag: $GITHUB_REF_NAME"
-          if [[ ! "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-dev\.[0-9]+)?$ ]]; then
-            echo "❌ Tag format does not match pub.dev pattern!"
-            echo "Expected: v<MAJOR>.<MINOR>.<PATCH> or v<MAJOR>.<MINOR>.<PATCH>-dev.<N>"
+          if [[ "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-dev\.[0-9]+)?$ ]]; then
+            echo "✅ Tag format is valid"
+            echo "::set-output name=valid::true"
+          else
+            echo "❌ Invalid tag format"
+            echo "::set-output name=valid::false"
             exit 1
           fi
-          echo "✅ Tag format is valid."
 
-      - name: Publish to pub.dev
-        uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
-        with:
-          working-directory: ./   # 你的 package 路径，如果是单包仓库可用 ./
+  # Step 2: 发布到 pub.dev
+  publish:
+    needs: validate-tag
+    if: needs.validate-tag.outputs.valid-tag == 'true'
+    uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
+    permissions:
+      id-token: write # Required for authentication using OIDC
+    with:
+      working-directory: ./   # 替换为你的 package 路径，如果是单包仓库可用 ./
