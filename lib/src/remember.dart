@@ -178,13 +178,13 @@ set _currComposer(RememberComposer value) {
 }
 
 extension on _RememberDisposeObserver {
-  T _remember<T>(
+  T _remember<T extends Object>(
       T Function()? factory,
       T Function(Lifecycle)? factory2,
       void Function(Lifecycle, T)? onCreate,
       FutureOr<void> Function(T)? onDispose) {
     _currComposer = this;
-    return getOrCreate(factory, factory2, onCreate, onDispose);
+    return getOrCreate<T>(factory, factory2, onCreate, onDispose);
   }
 }
 
@@ -222,6 +222,6 @@ extension BuildContextLifecycleRememberExt on BuildContext {
       () => _RememberDisposeObserver._(this, lifecycle),
     );
 
-    return manager._remember(factory, factory2, onCreate, onDispose);
+    return manager._remember<T>(factory, factory2, onCreate, onDispose);
   }
 }
