@@ -24,6 +24,7 @@ extension BuildContextLifecycleRememberControllersExt on BuildContext {
           c.dispose();
           onDispose?.call(c);
         },
+        key: FlexibleKey(initialIndex, animationDuration, length, key),
       );
 
   /// 动画控制器
@@ -53,6 +54,8 @@ extension BuildContextLifecycleRememberControllersExt on BuildContext {
         c.dispose();
         onDispose?.call(c);
       },
+      key: FlexibleKey(value, duration, reverseDuration, lowerBound, upperBound,
+          animationBehavior, key),
     );
   }
 
@@ -79,6 +82,8 @@ extension BuildContextLifecycleRememberControllersExt on BuildContext {
         c.dispose();
         onDispose?.call(c);
       },
+      key: FlexibleKey('Unbounded', value, duration, reverseDuration,
+          animationBehavior, key),
     );
   }
 
@@ -100,5 +105,28 @@ extension BuildContextLifecycleRememberControllersExt on BuildContext {
           c.dispose();
           onDispose?.call(c);
         },
+        key:
+            FlexibleKey(initialScrollOffset, keepScrollOffset, debugLabel, key),
+      );
+
+  /// PageView
+  PageController rememberPageController({
+    int initialPage = 0,
+    bool keepPage = true,
+    double viewportFraction = 1.0,
+    FutureOr<void> Function(PageController)? onDispose,
+    Object? key,
+  }) =>
+      remember<PageController>(
+        factory: () => PageController(
+          initialPage: initialPage,
+          keepPage: keepPage,
+          viewportFraction: viewportFraction,
+        ),
+        onDispose: (c) {
+          c.dispose();
+          onDispose?.call(c);
+        },
+        key: FlexibleKey(initialPage, keepPage, viewportFraction, key),
       );
 }

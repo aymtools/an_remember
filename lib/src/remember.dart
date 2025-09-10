@@ -10,9 +10,16 @@ import 'package:weak_collections/weak_collections.dart';
 
 class _RememberEntry<T> {
   final T value;
+  final Object? key;
   FutureOr<void> Function(T)? onDispose;
 
-  _RememberEntry(this.value, this.onDispose);
+  bool checkKey<E>(Object? key) {
+    return E == T && this.key == key;
+  }
+
+  Type get _type => T;
+
+  _RememberEntry(this.value, this.key, this.onDispose);
 
   void _safeInvokeOnDispose() {
     if (onDispose != null) {
@@ -98,46 +105,62 @@ class _RememberDisposeObserver extends RememberComposer
     }
   }
 
+  T _create<T extends Object>(
+    T Function()? factory,
+    T Function(Lifecycle)? factory2,
+    void Function(Lifecycle, T)? onCreate,
+  ) {
+    final lifecycle = _lifecycle.target!;
+    var data = factory?.call() ?? factory2?.call(lifecycle);
+    if (data == null) {
+      throw 'factory and factory2 cannot be null at the same time';
+    }
+
+    final Object? debugCheckForReturnedFuture =
+        onCreate?.call(lifecycle, data) as dynamic;
+    assert(() {
+      if (debugCheckForReturnedFuture is Future) {
+        throw FlutterError.fromParts(<DiagnosticsNode>[
+          ErrorSummary(
+            'remember<$T> onCreate() returned a Future.',
+          ),
+          ErrorDescription(
+            'remember<$T> onCreate() must be a void method without an `async` keyword.',
+          ),
+          ErrorHint(
+            'Rather than awaiting on asynchronous work directly inside of onCreate, '
+            'call a separate method to do this work without awaiting it.',
+          ),
+        ]);
+      }
+      return true;
+    }());
+    return data;
+  }
+
   T getOrCreate<T extends Object>(
     T Function()? factory,
     T Function(Lifecycle)? factory2,
     void Function(Lifecycle, T)? onCreate,
     FutureOr<void> Function(T)? onDispose,
+    Object? key,
   ) {
     if (_isDisposed) {
       throw 'RememberDisposeObserver has been disposed';
     }
-    final entity = _values.putIfAbsent(_currKey, () {
-      final lifecycle = _lifecycle.target!;
-      var data = factory?.call() ?? factory2?.call(lifecycle);
-      if (data == null) {
-        throw 'factory and factory2 cannot be null at the same time';
-      }
 
-      final Object? debugCheckForReturnedFuture =
-          onCreate?.call(lifecycle, data) as dynamic;
-      assert(() {
-        if (debugCheckForReturnedFuture is Future) {
-          throw FlutterError.fromParts(<DiagnosticsNode>[
-            ErrorSummary(
-              'remember<$T> onCreate() returned a Future.',
-            ),
-            ErrorDescription(
-              'remember<$T> onCreate() must be a void method without an `async` keyword.',
-            ),
-            ErrorHint(
-              'Rather than awaiting on asynchronous work directly inside of onCreate, '
-              'call a separate method to do this work without awaiting it.',
-            ),
-          ]);
-        }
-        return true;
-      }());
-
-      return _RememberEntry<T>(data, onDispose);
-    }) as _RememberEntry<T>;
-    entity.onDispose = onDispose;
-    return entity.value;
+    final currKey = _currKey;
+    final entity = _values[currKey];
+    if (entity != null && entity.checkKey<T>(key)) {
+      (entity as _RememberEntry<T>).onDispose = onDispose;
+      return entity.value;
+    } else {
+      final newEntry = _RememberEntry<T>(
+          _create(factory, factory2, onCreate), key, onDispose);
+      entity?._safeInvokeOnDispose();
+      _values[currKey] = newEntry;
+      return newEntry.value;
+    }
   }
 }
 
@@ -165,11 +188,11 @@ set _currComposer(RememberComposer value) {
       }
       composer = composer._last;
     }
+    value._last = _composer;
     return true;
   }());
 
   value._resetKey();
-  value._last = _composer;
   _composer = value;
   if (_needReset) {
     _needReset = false;
@@ -182,23 +205,25 @@ extension on _RememberDisposeObserver {
       T Function()? factory,
       T Function(Lifecycle)? factory2,
       void Function(Lifecycle, T)? onCreate,
-      FutureOr<void> Function(T)? onDispose) {
+      FutureOr<void> Function(T)? onDispose,
+      Object? key) {
     _currComposer = this;
-    return getOrCreate<T>(factory, factory2, onCreate, onDispose);
+    return getOrCreate<T>(factory, factory2, onCreate, onDispose, key);
   }
 }
 
 extension BuildContextLifecycleRememberExt on BuildContext {
-  /// 以当前[context]和调用顺序 记住该对象，并且以后将再次返回该对象
+  /// 以当前[context] 记住该对象，并且以后将再次返回该对象
+  /// * 调用顺序、[T]和 [key] 确定是否为同一个对象 如果发生了变化则重新创建
   /// * [factory] 和 [factory2] 如何构建这个对象，不能同时为空, [factory] 优先级高于 [factory2]
   /// * [onCreate] 创建完成时的处理
-  /// * [onDispose] 定义销毁时如何处理，一定晚于[context]的[dispose],非常注意不可使用[context]相关内容
-  T remember<T extends Object>({
-    T Function()? factory,
-    T Function(Lifecycle)? factory2,
-    void Function(Lifecycle, T)? onCreate,
-    FutureOr<void> Function(T)? onDispose,
-  }) {
+  /// * [onDispose] 定义销毁时如何处理，晚于[context]的[dispose],**非常注意：不可使用[context]相关内容**
+  T remember<T extends Object>(
+      {T Function()? factory,
+      T Function(Lifecycle)? factory2,
+      void Function(Lifecycle, T)? onCreate,
+      FutureOr<void> Function(T)? onDispose,
+      Object? key}) {
     if (factory == null && factory2 == null) {
       throw 'factory and factory2 cannot be null at the same time';
     }
@@ -222,6 +247,6 @@ extension BuildContextLifecycleRememberExt on BuildContext {
       () => _RememberDisposeObserver._(this, lifecycle),
     );
 
-    return manager._remember<T>(factory, factory2, onCreate, onDispose);
+    return manager._remember<T>(factory, factory2, onCreate, onDispose, key);
   }
 }
