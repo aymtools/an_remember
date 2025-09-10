@@ -4,34 +4,19 @@ name: Publish to pub.dev
 on:
   push:
     tags:
-      - 'v*'   # 捕获所有 v 开头的 tag，具体格式在 validate-tag job 中校验
+      # must align with the tag-pattern configured on pub.dev, often just replace
+      # {{version}} with [0-9]+.[0-9]+.[0-9]+
+      - 'v[0-9]+.[0-9]+.[0-9]+' # tag-pattern on pub.dev: 'v{{version}}'
+    # If you prefer tags like '1.2.3', without the 'v' prefix, then use:
+    # - '[0-9]+.[0-9]+.[0-9]+' # tag-pattern on pub.dev: '{{version}}'
+    # If your repository contains multiple packages consider a pattern like:
+    # - 'my_package_name-v[0-9]+.[0-9]+.[0-9]+'
 
+# Publish using the reusable workflow from dart-lang.
 jobs:
-  # Step 1: 校验 tag 格式
-  validate-tag:
-    runs-on: ubuntu-latest
-    outputs:
-      valid-tag: ${{ steps.check-tag.outputs.valid }}
-    steps:
-      - name: Check tag format
-        id: check-tag
-        run: |
-          echo "Tag: $GITHUB_REF_NAME"
-          if [[ "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-dev\.[0-9]+)?$ ]]; then
-            echo "✅ Tag format is valid"
-            echo "::set-output name=valid::true"
-          else
-            echo "❌ Invalid tag format"
-            echo "::set-output name=valid::false"
-            exit 1
-          fi
-
-  # Step 2: 发布到 pub.dev
   publish:
-    needs: validate-tag
-    if: needs.validate-tag.outputs.valid-tag == 'true'
-    uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
     permissions:
       id-token: write # Required for authentication using OIDC
-    with:
-      working-directory: ./   # 替换为你的 package 路径，如果是单包仓库可用 ./
+    uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
+    # with:
+    #   working-directory: path/to/package/within/repository
