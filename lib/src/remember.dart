@@ -17,7 +17,7 @@ class _RememberEntry<T> {
     return E == T && this.key == key;
   }
 
-  Type get _type => T;
+  // Type get _type => T;
 
   _RememberEntry(this.value, this.key, this.onDispose);
 
