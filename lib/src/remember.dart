@@ -12,6 +12,7 @@ class _RememberEntry<T> {
   final T value;
   final Object? key;
   FutureOr<void> Function(T)? onDispose;
+  bool _isDisposed = false;
 
   bool checkKey<E>(Object? key) {
     return E == T && this.key == key;
@@ -22,6 +23,11 @@ class _RememberEntry<T> {
   _RememberEntry(this.value, this.key, this.onDispose);
 
   void _safeInvokeOnDispose() {
+    if (_isDisposed) {
+      return;
+    }
+    _isDisposed = true;
+
     if (onDispose != null) {
       try {
         onDispose!(value);
@@ -157,7 +163,11 @@ class _RememberDisposeObserver extends RememberComposer
     } else {
       final newEntry = _RememberEntry<T>(
           _create(factory, factory2, onCreate), key, onDispose);
-      entity?._safeInvokeOnDispose();
+
+      /// 此处需要一个等待 嵌套的 build 销毁
+      Future.delayed(Duration.zero, () {
+        entity?._safeInvokeOnDispose();
+      });
       _values[currKey] = newEntry;
       return newEntry.value;
     }
