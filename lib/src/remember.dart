@@ -1,11 +1,7 @@
 import 'dart:async';
-import 'dart:collection';
 
-import 'package:an_lifecycle_cancellable/an_lifecycle_cancellable.dart'
-    hide BuildContextLifecycleRememberExt;
 import 'package:anlifecycle/anlifecycle.dart';
 import 'package:flutter/material.dart';
-import 'package:remember/src/tools.dart';
 import 'package:weak_collections/weak_collections.dart';
 
 class _RememberEntry<T> {
@@ -45,18 +41,33 @@ class _RememberEntry<T> {
   }
 }
 
-final Finalizer<_RememberDisposeObserver> _finalizer =
-    Finalizer<_RememberDisposeObserver>((observer) {
+final Finalizer<_RememberComposer> _finalizer =
+    Finalizer<_RememberComposer>((observer) {
   observer._safeCallDisposer(callDetach: false);
 });
 
 abstract class RememberComposer {
-  final _values = HashMap<int, _RememberEntry<dynamic>>.identity();
+  static const initLength = 8;
+  static const maxLength = 1 << 30;
+  var _length = initLength;
+  late var _values = List<_RememberEntry?>.filled(_length, null);
 
   int _currentKey = 0;
   RememberComposer? _last;
 
-  int get _currKey => ++_currentKey;
+  int get _currKey {
+    final r = ++_currentKey;
+    if (r == _length && r < maxLength) {
+      /// 每次填充满的时候增长一倍
+      _length = _length << 1;
+      final list = List<_RememberEntry?>.filled(_length, null);
+      for (int i = 0; i < _length; i++) {
+        list[i] = _values[i];
+      }
+      _values = list;
+    }
+    return r;
+  }
 
   void _resetKey() {
     _currentKey = 0;
@@ -69,45 +80,30 @@ abstract class RememberComposer {
   }
 }
 
-class _RememberDisposeObserver extends RememberComposer
-    with LifecycleStateChangeObserver {
+class _RememberComposer extends RememberComposer {
   final WeakReference<Lifecycle> _lifecycle;
   final WeakReference<BuildContext> _context;
   bool _isDisposed = false;
 
-  _RememberDisposeObserver._(BuildContext context, Lifecycle lifecycle)
+  _RememberComposer._(BuildContext context, Lifecycle lifecycle)
       : _context = WeakReference(context),
         _lifecycle = WeakReference(lifecycle) {
-    lifecycle.addLifecycleObserver(this);
     _finalizer.attach(context, this, detach: _context);
-  }
-
-  @override
-  void onStateChange(LifecycleOwner owner, LifecycleState state) {
-    if (state == LifecycleState.destroyed) {
-      _safeCallDisposer();
-    } else if (state > LifecycleState.initialized &&
-        _context.target?.mounted != true) {
-      owner.removeLifecycleObserver(this, fullCycle: false);
-      _safeCallDisposer();
-    }
   }
 
   void _safeCallDisposer({bool callDetach = true}) async {
     if (_isDisposed) return;
     _isDisposed = true;
 
-    final entries = [..._values.values];
+    final entries = [..._values];
     _values.clear();
 
     if (callDetach) {
       _finalizer.detach(_context);
-    } else {
-      _lifecycle.target?.removeLifecycleObserver(this, fullCycle: false);
     }
 
     for (var disposable in entries) {
-      disposable._safeInvokeOnDispose();
+      disposable?._safeInvokeOnDispose();
     }
   }
 
@@ -164,17 +160,16 @@ class _RememberDisposeObserver extends RememberComposer
       final newEntry = _RememberEntry<T>(
           _create(factory, factory2, onCreate), key, onDispose);
 
-      /// 此处需要一个等待 嵌套的 build 销毁
-      Future.delayed(Duration.zero, () {
-        entity?._safeInvokeOnDispose();
-      });
+      if (entity != null) {
+        /// 此处需要一个等待 嵌套的 build 销毁
+        WidgetsBinding.instance
+            .addPostFrameCallback((_) => entity._safeInvokeOnDispose());
+      }
       _values[currKey] = newEntry;
       return newEntry.value;
     }
   }
 }
-
-final _keyRemember = Object();
 
 RememberComposer? _composer;
 
@@ -210,7 +205,7 @@ set _currComposer(RememberComposer value) {
   }
 }
 
-extension on _RememberDisposeObserver {
+extension on _RememberComposer {
   T _remember<T extends Object>(
       T Function()? factory,
       T Function(Lifecycle)? factory2,
@@ -219,6 +214,36 @@ extension on _RememberDisposeObserver {
       Object? key) {
     _currComposer = this;
     return getOrCreate<T>(factory, factory2, onCreate, onDispose, key);
+  }
+}
+
+final Map<LifecycleOwner, _RememberComposerObserver> _rememberComposers =
+    WeakHashMap.identity();
+
+class _RememberComposerObserver with LifecycleEventObserver {
+  final WeakReference<Lifecycle> _lifecycle;
+  final WeakHashMap<BuildContext, _RememberComposer> _managers =
+      WeakHashMap.identity();
+
+  _RememberComposerObserver(Lifecycle lifecycle)
+      : _lifecycle = WeakReference(lifecycle) {
+    lifecycle.addLifecycleObserver(this);
+  }
+
+  @override
+  void onDestroy(LifecycleOwner owner) {
+    super.onDestroy(owner);
+    final values = [..._managers.values];
+    _managers.clear();
+    for (var value in values) {
+      value._safeCallDisposer();
+    }
+    _rememberComposers.remove(owner);
+  }
+
+  _RememberComposer getComposer(BuildContext context) {
+    return _managers.putIfAbsent(
+        context, () => _RememberComposer._(context, _lifecycle.target!));
   }
 }
 
@@ -237,25 +262,31 @@ extension BuildContextLifecycleRememberExt on BuildContext {
     if (factory == null && factory2 == null) {
       throw 'factory and factory2 cannot be null at the same time';
     }
+    if (!mounted) {
+      throw 'context has not been mounted';
+    }
 
     final lifecycle = Lifecycle.of(this);
-    final managers =
-        lifecycle.extData.getOrPut<Map<BuildContext, _RememberDisposeObserver>>(
-      key: _keyRemember,
-      ifAbsent: (l) {
-        final result =
-            WeakHashMap<BuildContext, _RememberDisposeObserver>.identity();
-
-        /// 不持有 Map，防止内存泄漏
-        lifecycle.addLifecycleObserver(MapAutoClearObserver(result));
-        return result;
-      },
-    );
-
-    final manager = managers.putIfAbsent(
-      this,
-      () => _RememberDisposeObserver._(this, lifecycle),
-    );
+    final managers = _rememberComposers.putIfAbsent(
+        lifecycle.owner, () => _RememberComposerObserver(lifecycle));
+    final manager = managers.getComposer(this);
+    // final managers =
+    //     lifecycle.extData.getOrPut<Map<BuildContext, _RememberDisposeObserver>>(
+    //   key: _keyRemember,
+    //   ifAbsent: (l) {
+    //     final result =
+    //         WeakHashMap<BuildContext, _RememberDisposeObserver>.identity();
+    //
+    //     /// 不持有 Map，防止内存泄漏
+    //     lifecycle.addLifecycleObserver(MapAutoClearObserver(result));
+    //     return result;
+    //   },
+    // );
+    //
+    // final manager = managers.putIfAbsent(
+    //   this,
+    //   () => _RememberDisposeObserver._(this, lifecycle),
+    // );
 
     return manager._remember<T>(factory, factory2, onCreate, onDispose, key);
   }
