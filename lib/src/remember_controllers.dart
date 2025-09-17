@@ -4,7 +4,7 @@ import 'package:an_lifecycle_cancellable/an_lifecycle_cancellable.dart'
     hide BuildContextLifecycleRememberExt;
 import 'package:anlifecycle/anlifecycle.dart';
 import 'package:flutter/material.dart';
-import 'package:remember/src/remember.dart';
+import 'package:remember/src/remember_listenable.dart';
 
 extension BuildContextLifecycleRememberControllersExt on BuildContext {
   /// 快速生成一个可重用的 TabController
@@ -20,9 +20,10 @@ extension BuildContextLifecycleRememberControllersExt on BuildContext {
     required int length,
     void Function(Lifecycle, TabController)? onCreate,
     FutureOr<void> Function(TabController)? onDispose,
+    bool listen = false,
     Object? key,
   }) =>
-      remember<TabController>(
+      rememberListenable<TabController>(
         factory2: (l) => TabController(
           initialIndex: initialIndex,
           length: length,
@@ -33,6 +34,7 @@ extension BuildContextLifecycleRememberControllersExt on BuildContext {
           c.dispose();
           onDispose?.call(c);
         },
+        listen: listen,
         key: FlexibleKey(initialIndex, animationDuration, length, key),
       );
 
@@ -50,9 +52,10 @@ extension BuildContextLifecycleRememberControllersExt on BuildContext {
     AnimationBehavior animationBehavior = AnimationBehavior.normal,
     void Function(Lifecycle, AnimationController)? onCreate,
     FutureOr<void> Function(AnimationController)? onDispose,
+    bool listen = false,
     Object? key,
   }) {
-    return remember<AnimationController>(
+    return rememberListenable<AnimationController>(
       factory2: (l) => AnimationController(
         value: value,
         duration: duration,
@@ -68,6 +71,7 @@ extension BuildContextLifecycleRememberControllersExt on BuildContext {
         c.dispose();
         onDispose?.call(c);
       },
+      listen: listen,
       key: FlexibleKey(value, duration, reverseDuration, lowerBound, upperBound,
           animationBehavior, key),
     );
@@ -85,9 +89,10 @@ extension BuildContextLifecycleRememberControllersExt on BuildContext {
     AnimationBehavior animationBehavior = AnimationBehavior.normal,
     void Function(Lifecycle, AnimationController)? onCreate,
     FutureOr<void> Function(AnimationController)? onDispose,
+    bool listen = false,
     Object? key,
   }) {
-    return remember<AnimationController>(
+    return rememberListenable<AnimationController>(
       factory2: (l) => AnimationController.unbounded(
         value: value,
         duration: duration,
@@ -101,6 +106,7 @@ extension BuildContextLifecycleRememberControllersExt on BuildContext {
         c.dispose();
         onDispose?.call(c);
       },
+      listen: listen,
       key: FlexibleKey('Unbounded', value, duration, reverseDuration,
           animationBehavior, key),
     );
@@ -113,15 +119,17 @@ extension BuildContextLifecycleRememberControllersExt on BuildContext {
   /// * [keepScrollOffset] 是否保持偏移量
   /// * [debugLabel] 调试标签
   /// * [onDispose] 定义销毁时如何处理，晚于[context]的[dispose],**非常注意：不可使用[context]相关内容**
+  /// * onAttach onDetach 需要flutter 3.19.0 以上的版本
   ScrollController rememberScrollController({
     double initialScrollOffset = 0.0,
     bool keepScrollOffset = true,
     String? debugLabel,
     void Function(Lifecycle, ScrollController)? onCreate,
     FutureOr<void> Function(ScrollController)? onDispose,
+    bool listen = false,
     Object? key,
   }) =>
-      remember<ScrollController>(
+      rememberListenable<ScrollController>(
         factory: () => ScrollController(
           initialScrollOffset: initialScrollOffset,
           keepScrollOffset: keepScrollOffset,
@@ -132,6 +140,7 @@ extension BuildContextLifecycleRememberControllersExt on BuildContext {
           c.dispose();
           onDispose?.call(c);
         },
+        listen: listen,
         key:
             FlexibleKey(initialScrollOffset, keepScrollOffset, debugLabel, key),
       );
@@ -145,9 +154,10 @@ extension BuildContextLifecycleRememberControllersExt on BuildContext {
     double viewportFraction = 1.0,
     void Function(Lifecycle, PageController)? onCreate,
     FutureOr<void> Function(PageController)? onDispose,
+    bool listen = false,
     Object? key,
   }) =>
-      remember<PageController>(
+      rememberListenable<PageController>(
         factory: () => PageController(
           initialPage: initialPage,
           keepPage: keepPage,
@@ -158,6 +168,30 @@ extension BuildContextLifecycleRememberControllersExt on BuildContext {
           c.dispose();
           onDispose?.call(c);
         },
+        listen: listen,
         key: FlexibleKey(initialPage, keepPage, viewportFraction, key),
+      );
+
+  /// 快速生成一个可重用的 TextEditingController
+  /// * 调用顺序、[T]、[key]、[text]、[value]、[onCreate]、[onDispose]
+  /// 确定是否为同一个对象 如果发生了变化则重新创建
+  /// * [value] 初始值,优先级高于[text]
+  /// * [text] 初始文本
+  TextEditingController rememberTextEditingController({
+    TextEditingValue? value,
+    String? text,
+    void Function(Lifecycle, TextEditingController)? onCreate,
+    FutureOr<void> Function(TextEditingController)? onDispose,
+    bool listen = false,
+    Object? key,
+  }) =>
+      rememberListenable<TextEditingController>(
+        factory: () => value == null
+            ? TextEditingController()
+            : TextEditingController.fromValue(value),
+        onCreate: onCreate,
+        onDispose: onDispose,
+        listen: listen,
+        key: FlexibleKey(text, value, key),
       );
 }
