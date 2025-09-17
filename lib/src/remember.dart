@@ -46,6 +46,8 @@ final Finalizer<_RememberComposer> _finalizer =
   observer._safeCallDisposer(callDetach: false);
 });
 
+final _empty = List.filled(0, null);
+
 abstract class RememberComposer {
   static const initLength = 8;
   static const maxLength = 1 << 30;
@@ -61,7 +63,7 @@ abstract class RememberComposer {
       /// 每次填充满的时候增长一倍
       _length = _length << 1;
       final list = List<_RememberEntry?>.filled(_length, null);
-      for (int i = 0; i < _length; i++) {
+      for (int i = 0; i < r; i++) {
         list[i] = _values[i];
       }
       _values = list;
@@ -77,6 +79,40 @@ abstract class RememberComposer {
     _resetKey();
     _last?._reset();
     _last = null;
+  }
+}
+
+RememberComposer? _composer;
+
+void _resetComposer() {
+  _needReset = true;
+  _composer?._reset();
+  _composer = null;
+}
+
+bool _needReset = true;
+
+set _currComposer(RememberComposer value) {
+  if (identical(_composer, value)) return;
+
+  assert(() {
+    var composer = _composer;
+    while (composer != null && composer._last != null) {
+      if (identical(composer._last, value)) {
+        //检测到循环引用
+        throw Exception("Can only be used in the build function.");
+      }
+      composer = composer._last;
+    }
+    value._last = _composer;
+    return true;
+  }());
+
+  value._resetKey();
+  _composer = value;
+  if (_needReset) {
+    _needReset = false;
+    scheduleMicrotask(_resetComposer);
   }
 }
 
@@ -96,7 +132,7 @@ class _RememberComposer extends RememberComposer {
     _isDisposed = true;
 
     final entries = [..._values];
-    _values.clear();
+    _values = _empty;
 
     if (callDetach) {
       _finalizer.detach(_context);
@@ -168,40 +204,6 @@ class _RememberComposer extends RememberComposer {
       _values[currKey] = newEntry;
       return newEntry.value;
     }
-  }
-}
-
-RememberComposer? _composer;
-
-void _resetComposer() {
-  _needReset = true;
-  _composer?._reset();
-  _composer = null;
-}
-
-bool _needReset = true;
-
-set _currComposer(RememberComposer value) {
-  if (identical(_composer, value)) return;
-
-  assert(() {
-    var composer = _composer;
-    while (composer != null && composer._last != null) {
-      if (identical(composer._last, value)) {
-        //检测到循环引用
-        throw Exception("Can only be used in the build function.");
-      }
-      composer = composer._last;
-    }
-    value._last = _composer;
-    return true;
-  }());
-
-  value._resetKey();
-  _composer = value;
-  if (_needReset) {
-    _needReset = false;
-    scheduleMicrotask(_resetComposer);
   }
 }
 
