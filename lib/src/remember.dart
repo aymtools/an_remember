@@ -54,20 +54,28 @@ abstract class RememberComposer {
   var _length = initLength;
   late var _values = List<_RememberEntry?>.filled(_length, null);
 
+  BuildContext? get _host;
+
   int _currentKey = 0;
   RememberComposer? _last;
 
   int get _currKey {
     final r = ++_currentKey;
-    if (r == _length && r < maxLength) {
-      /// 每次填充满的时候增长一倍
-      _length = _length << 1;
-      final list = List<_RememberEntry?>.filled(_length, null);
-      for (int i = 0; i < r; i++) {
-        list[i] = _values[i];
-      }
-      _values = list;
+    if (r < _length) {
+      return r;
     }
+    if (r >= maxLength) {
+      throw Exception(
+          "There are too many slots. Please adjust the usage plan.");
+    }
+
+    /// 每次填充满的时候增长一倍
+    _length = _length << 1;
+    final list = List<_RememberEntry?>.filled(_length, null);
+    for (int i = 0; i < r; i++) {
+      list[i] = _values[i];
+    }
+    _values = list;
     return r;
   }
 
@@ -80,6 +88,13 @@ abstract class RememberComposer {
     _last?._reset();
     _last = null;
   }
+
+  T _getOrCreate<T extends Object>(
+      T Function()? factory,
+      T Function(Lifecycle)? factory2,
+      void Function(Lifecycle, T)? onCreate,
+      FutureOr<void> Function(T)? onDispose,
+      Object? key);
 }
 
 RememberComposer? _composer;
@@ -120,6 +135,9 @@ class _RememberComposer extends RememberComposer {
   final WeakReference<Lifecycle> _lifecycle;
   final WeakReference<BuildContext> _context;
   bool _isDisposed = false;
+
+  @override
+  BuildContext? get _host => _context.target;
 
   _RememberComposer._(BuildContext context, Lifecycle lifecycle)
       : _context = WeakReference(context),
@@ -176,7 +194,8 @@ class _RememberComposer extends RememberComposer {
     return data;
   }
 
-  T getOrCreate<T extends Object>(
+  @override
+  T _getOrCreate<T extends Object>(
     T Function()? factory,
     T Function(Lifecycle)? factory2,
     void Function(Lifecycle, T)? onCreate,
@@ -204,18 +223,6 @@ class _RememberComposer extends RememberComposer {
       _values[currKey] = newEntry;
       return newEntry.value;
     }
-  }
-}
-
-extension on _RememberComposer {
-  T _remember<T extends Object>(
-      T Function()? factory,
-      T Function(Lifecycle)? factory2,
-      void Function(Lifecycle, T)? onCreate,
-      FutureOr<void> Function(T)? onDispose,
-      Object? key) {
-    _currComposer = this;
-    return getOrCreate<T>(factory, factory2, onCreate, onDispose, key);
   }
 }
 
@@ -268,28 +275,18 @@ extension BuildContextLifecycleRememberExt on BuildContext {
       throw 'context has not been mounted';
     }
 
-    final lifecycle = Lifecycle.of(this);
-    final managers = _rememberComposers.putIfAbsent(
-        lifecycle.owner, () => _RememberComposerObserver(lifecycle));
-    final manager = managers.getComposer(this);
-    // final managers =
-    //     lifecycle.extData.getOrPut<Map<BuildContext, _RememberDisposeObserver>>(
-    //   key: _keyRemember,
-    //   ifAbsent: (l) {
-    //     final result =
-    //         WeakHashMap<BuildContext, _RememberDisposeObserver>.identity();
-    //
-    //     /// 不持有 Map，防止内存泄漏
-    //     lifecycle.addLifecycleObserver(MapAutoClearObserver(result));
-    //     return result;
-    //   },
-    // );
-    //
-    // final manager = managers.putIfAbsent(
-    //   this,
-    //   () => _RememberDisposeObserver._(this, lifecycle),
-    // );
-
-    return manager._remember<T>(factory, factory2, onCreate, onDispose, key);
+    RememberComposer? composer;
+    if (identical(this, _composer?._host)) {
+      composer = _composer!;
+    }
+    if (composer == null) {
+      final lifecycle = Lifecycle.of(this);
+      final managers = _rememberComposers.putIfAbsent(
+          lifecycle.owner, () => _RememberComposerObserver(lifecycle));
+      composer = managers.getComposer(this);
+      _currComposer = composer;
+    }
+    return composer._getOrCreate<T>(
+        factory, factory2, onCreate, onDispose, key);
   }
 }
