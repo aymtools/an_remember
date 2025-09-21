@@ -23,7 +23,7 @@ extension BuildContextLifecycleRememberControllersExt on BuildContext {
     bool listen = false,
     Object? key,
   }) =>
-      rememberListenable<TabController>(
+      rememberChangeNotifier<TabController>(
         factory2: (l) => TabController(
           initialIndex: initialIndex,
           animationDuration: animationDuration,
@@ -31,10 +31,7 @@ extension BuildContextLifecycleRememberControllersExt on BuildContext {
           vsync: l.tickerProvider,
         ),
         onCreate: onCreate,
-        onDispose: (c) {
-          c.dispose();
-          onDispose?.call(c);
-        },
+        onDispose: onDispose,
         listen: listen,
         key: FlexibleKey(initialIndex, animationDuration, length, key),
       );
@@ -130,17 +127,14 @@ extension BuildContextLifecycleRememberControllersExt on BuildContext {
     bool listen = false,
     Object? key,
   }) =>
-      rememberListenable<ScrollController>(
+      rememberChangeNotifier<ScrollController>(
         factory: () => ScrollController(
           initialScrollOffset: initialScrollOffset,
           keepScrollOffset: keepScrollOffset,
           debugLabel: debugLabel,
         ),
         onCreate: onCreate,
-        onDispose: (c) {
-          c.dispose();
-          onDispose?.call(c);
-        },
+        onDispose: onDispose,
         listen: listen,
         key:
             FlexibleKey(initialScrollOffset, keepScrollOffset, debugLabel, key),
@@ -158,17 +152,14 @@ extension BuildContextLifecycleRememberControllersExt on BuildContext {
     bool listen = false,
     Object? key,
   }) =>
-      rememberListenable<PageController>(
+      rememberChangeNotifier<PageController>(
         factory: () => PageController(
           initialPage: initialPage,
           keepPage: keepPage,
           viewportFraction: viewportFraction,
         ),
         onCreate: onCreate,
-        onDispose: (c) {
-          c.dispose();
-          onDispose?.call(c);
-        },
+        onDispose: onDispose,
         listen: listen,
         key: FlexibleKey(initialPage, keepPage, viewportFraction, key),
       );
@@ -186,15 +177,12 @@ extension BuildContextLifecycleRememberControllersExt on BuildContext {
     bool listen = false,
     Object? key,
   }) =>
-      rememberListenable<TextEditingController>(
+      rememberChangeNotifier<TextEditingController>(
         factory: () => value == null
-            ? TextEditingController()
+            ? TextEditingController(text: text)
             : TextEditingController.fromValue(value),
         onCreate: onCreate,
-        onDispose: (d) {
-          d.dispose();
-          onDispose?.call(d);
-        },
+        onDispose: onDispose,
         listen: listen,
         key: FlexibleKey(text, value, key),
       );

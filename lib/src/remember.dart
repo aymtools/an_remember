@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:anlifecycle/anlifecycle.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:weak_collections/weak_collections.dart';
 
 class _RememberEntry<T> {
