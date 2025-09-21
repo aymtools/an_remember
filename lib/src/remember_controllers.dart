@@ -26,6 +26,7 @@ extension BuildContextLifecycleRememberControllersExt on BuildContext {
       rememberListenable<TabController>(
         factory2: (l) => TabController(
           initialIndex: initialIndex,
+          animationDuration: animationDuration,
           length: length,
           vsync: l.tickerProvider,
         ),
@@ -72,8 +73,8 @@ extension BuildContextLifecycleRememberControllersExt on BuildContext {
         onDispose?.call(c);
       },
       listen: listen,
-      key: FlexibleKey(value, duration, reverseDuration, lowerBound, upperBound,
-          animationBehavior, key),
+      key: FlexibleKey(value, duration, reverseDuration, debugLabel, lowerBound,
+          upperBound, animationBehavior, key),
     );
   }
 
@@ -108,7 +109,7 @@ extension BuildContextLifecycleRememberControllersExt on BuildContext {
       },
       listen: listen,
       key: FlexibleKey('Unbounded', value, duration, reverseDuration,
-          animationBehavior, key),
+          debugLabel, animationBehavior, key),
     );
   }
 
@@ -190,7 +191,10 @@ extension BuildContextLifecycleRememberControllersExt on BuildContext {
             ? TextEditingController()
             : TextEditingController.fromValue(value),
         onCreate: onCreate,
-        onDispose: onDispose,
+        onDispose: (d) {
+          d.dispose();
+          onDispose?.call(d);
+        },
         listen: listen,
         key: FlexibleKey(text, value, key),
       );
