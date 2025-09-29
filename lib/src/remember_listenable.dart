@@ -1,12 +1,15 @@
 import 'dart:async';
 
 import 'package:an_lifecycle_cancellable/an_lifecycle_cancellable.dart'
-    hide BuildContextLifecycleRememberExt;
+    show
+        LifecycleObserverRegistryCacnellable,
+        ListenableCancellable,
+        CancellableValueNotifier;
 import 'package:anlifecycle/anlifecycle.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:remember/src/remember.dart';
 
-extension BuildContextLifecycleRememberListenableExt on BuildContext {
+extension RememberListenableExt on BuildContext {
   /// 快速生成一个可重用的 Listenable
   /// * 调用顺序、[T]和 [key] 确定是否为同一个对象 如果发生了变化则重新创建
   /// * [value]， [factory]， [factory2] 确定如何初始化的创建一个 ValueNotifier 必须有一个不能为空 不作为更新key
@@ -43,7 +46,7 @@ extension BuildContextLifecycleRememberListenableExt on BuildContext {
       );
 }
 
-extension BuildContextLifecycleRememberChangeNotifierExt on BuildContext {
+extension RememberChangeNotifierExt on BuildContext {
   /// 快速生成一个可重用的 ChangeNotifier
   /// * 调用顺序、[T]和 [key] 确定是否为同一个对象 如果发生了变化则重新创建
   /// * [factory]， [factory2] 确定如何初始化的创建一个 ValueNotifier 必须有一个不能为空 不作为更新key
@@ -70,7 +73,7 @@ extension BuildContextLifecycleRememberChangeNotifierExt on BuildContext {
           key: key);
 }
 
-extension BuildContextLifecycleRememberValueNotifierExt on BuildContext {
+extension RememberValueNotifierExt on BuildContext {
   /// 快速生成一个可重用的 ValueNotifier
   /// * 调用顺序、[T]和 [key] 确定是否为同一个对象 如果发生了变化则重新创建
   /// * [value]， [factory]， [factory2] 确定如何初始化的创建一个 ValueNotifier 必须有一个不能为空 不作为更新key
