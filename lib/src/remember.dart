@@ -1,10 +1,12 @@
 import 'dart:async';
 
 import 'package:anlifecycle/anlifecycle.dart';
+import 'package:cancellable/cancellable.dart';
 import 'package:flutter/widgets.dart';
 import 'package:weak_collections/weak_collections.dart';
 
 class _RememberEntry<T> {
+  final Cancellable _disposable;
   final T value;
   final Object? key;
   FutureOr<void> Function(T)? onDispose;
@@ -16,13 +18,16 @@ class _RememberEntry<T> {
 
   // Type get _type => T;
 
-  _RememberEntry(this.value, this.key, this.onDispose);
+  _RememberEntry(this.value, this.key, this._disposable, this.onDispose) {
+    _disposable.whenCancel.then((_) => _safeInvokeOnDispose());
+  }
 
   void _safeInvokeOnDispose() {
     if (_isDisposed) {
       return;
     }
     _isDisposed = true;
+    _disposable.cancel();
 
     if (onDispose != null) {
       try {
@@ -93,6 +98,7 @@ abstract class RememberComposer {
       T Function()? factory,
       T Function(Lifecycle)? factory2,
       void Function(Lifecycle, T)? onCreate,
+      T Function(T, Lifecycle, Cancellable)? bindLifecycle,
       FutureOr<void> Function(T)? onDispose,
       Object? key);
 }
@@ -161,16 +167,24 @@ class _RememberComposer extends RememberComposer {
     }
   }
 
-  T _create<T extends Object>(
+  _RememberEntry<T> _createEntry<T extends Object>(
     T Function()? factory,
     T Function(Lifecycle)? factory2,
     void Function(Lifecycle, T)? onCreate,
+    T Function(T, Lifecycle, Cancellable)? bindLifecycle,
+    FutureOr<void> Function(T)? onDispose,
+    Object? key,
   ) {
     final lifecycle = _lifecycle.target!;
     var data = factory?.call() ?? factory2?.call(lifecycle);
     if (data == null) {
       throw 'factory and factory2 cannot be null at the same time';
     }
+    final disposable = Cancellable();
+    if (bindLifecycle != null) {
+      data = bindLifecycle(data, lifecycle, disposable);
+    }
+    final result = _RememberEntry<T>(data, key, disposable, onDispose);
 
     final Object? debugCheckForReturnedFuture =
         onCreate?.call(lifecycle, data) as dynamic;
@@ -191,7 +205,7 @@ class _RememberComposer extends RememberComposer {
       }
       return true;
     }());
-    return data;
+    return result;
   }
 
   @override
@@ -199,6 +213,7 @@ class _RememberComposer extends RememberComposer {
     T Function()? factory,
     T Function(Lifecycle)? factory2,
     void Function(Lifecycle, T)? onCreate,
+    T Function(T, Lifecycle, Cancellable)? bindLifecycle,
     FutureOr<void> Function(T)? onDispose,
     Object? key,
   ) {
@@ -208,18 +223,21 @@ class _RememberComposer extends RememberComposer {
 
     final currKey = _currKey;
     final entity = _values[currKey];
-    if (entity != null && entity.checkKey<T>(key)) {
+    if (entity != null &&
+        entity.checkKey<T>(key) &&
+        entity._disposable.isAvailable) {
       (entity as _RememberEntry<T>).onDispose = onDispose;
       return entity.value;
     } else {
-      final newEntry = _RememberEntry<T>(
-          _create(factory, factory2, onCreate), key, onDispose);
+      final newEntry = _createEntry(
+          factory, factory2, onCreate, bindLifecycle, onDispose, key);
 
-      if (entity != null) {
-        /// 此处需要一个等待 嵌套的 build 销毁
-        WidgetsBinding.instance
-            .addPostFrameCallback((_) => entity._safeInvokeOnDispose());
-      }
+      entity?._disposable.cancel();
+      // if (entity != null) {
+      //   /// 此处需要一个等待 嵌套的 build 销毁
+      //   WidgetsBinding.instance
+      //       .addPostFrameCallback((_) => entity._safeInvokeOnDispose());
+      // }
       _values[currKey] = newEntry;
       return newEntry.value;
     }
@@ -261,10 +279,12 @@ extension BuildContextLifecycleRememberExt on BuildContext {
   /// * 调用顺序、[T]和 [key] 确定是否为同一个对象 如果发生了变化则重新创建
   /// * [factory] 和 [factory2] 如何构建这个对象，不能同时为空, [factory] 优先级高于 [factory2]
   /// * [onCreate] 创建完成时的处理
+  /// * [bindLifecycle] 绑定到生命周期并使用返回的结果内容，参数[Cancellable]是当前[remember]的销毁状态, 调用时机优先于[onCreate]
   /// * [onDispose] 定义销毁时如何处理，晚于[context]的[dispose],**非常注意：不可使用[context]相关内容**
   T remember<T extends Object>(
       {T Function()? factory,
       T Function(Lifecycle)? factory2,
+      T Function(T, Lifecycle, Cancellable)? bindLifecycle,
       void Function(Lifecycle, T)? onCreate,
       FutureOr<void> Function(T)? onDispose,
       Object? key}) {
@@ -287,6 +307,6 @@ extension BuildContextLifecycleRememberExt on BuildContext {
       _currComposer = composer;
     }
     return composer._getOrCreate<T>(
-        factory, factory2, onCreate, onDispose, key);
+        factory, factory2, onCreate, bindLifecycle, onDispose, key);
   }
 }
