@@ -1,6 +1,6 @@
 ## 1.2.0
 
-*
+* Added bindLifecycle to bind lifecycle.
 
 ## 1.1.0
 
