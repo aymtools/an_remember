@@ -46,6 +46,8 @@ class HomeRememberDemo extends StatelessWidget {
   Widget build(BuildContext context) {
     // 记住一个 ValueNotifier<int> listen:并且自动刷新当前context
     final counter = context.rememberValueNotifier(value: 0, listen: true);
+    // 新增计步器
+    final step = context.rememberValueNotifier(value: 1);
     return Scaffold(
       appBar: AppBar(
         title: Text(title),
@@ -57,7 +59,7 @@ class HomeRememberDemo extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          counter.value++;
+          counter.value += step.value;
         },
         tooltip: 'Increment',
         child: const Icon(Icons.add),
@@ -147,6 +149,69 @@ class HomeRememberDemo extends StatelessWidget {
     void Function(Lifecycle, ValueNotifier<T>)? onCreate,
     FutureOr<void> Function(ValueNotifier<T>)? onDispose,
     bool listen = false,
+    Object? key,
+  })
+  
+  /// Quickly creates a reusable [TextEditingController].
+  TextEditingController rememberTextEditingController({
+    TextEditingValue? value,
+    String? text,
+    void Function(Lifecycle, TextEditingController)? onCreate,
+    FutureOr<void> Function(TextEditingController)? onDispose,
+    bool listen = false,
+    Object? key,
+  })
+  
+  /// Quickly creates a reusable [ChangeNotifier].
+  T rememberChangeNotifier<T extends ChangeNotifier>({
+    T Function()? factory,
+    T Function(Lifecycle)? factory2,
+    void Function(Lifecycle, T)? onCreate,
+    FutureOr<void> Function(T)? onDispose,
+    bool listen = false,
+    Object? key,
+  })
+  
+  /// Quickly creates a reusable [FocusNode].
+  FocusNode rememberFocusNode({
+    String? debugLabel,
+    FocusOnKeyEventCallback? onKeyEvent,
+    bool skipTraversal = false,
+    bool canRequestFocus = true,
+    bool descendantsAreFocusable = true,
+    bool descendantsAreTraversable = true,
+    Object? key,
+  })
+  
+  /// Quickly creates a reusable [FocusScopeNode].
+  FocusScopeNode rememberFocusScopeNode({
+    String? debugLabel,
+    FocusOnKeyEventCallback? onKeyEvent,
+    bool skipTraversal = false,
+    bool canRequestFocus = true,
+    TraversalEdgeBehavior traversalEdgeBehavior =
+        TraversalEdgeBehavior.closedLoop,
+    Object? key,
+  })
+  
+  /// Quickly creates a reusable [Stream<T>].
+  Stream<T> rememberStream<T>({
+    Stream<T> Function()? factory,
+    Stream<T> Function(Lifecycle)? factory2,
+    LifecycleState state = LifecycleState.created,
+    bool repeatLastOnStateAtLeast = false,
+    bool closeWhenCancel = false,
+    bool? cancelOnError,
+    Object? key,
+  })
+  
+  /// Quickly creates a reusable [Stream<T>].
+  Stream<T> rememberStreamXXX({})
+  
+  /// Quickly creates a reusable [Timer].
+  Timer rememberTimer({
+    required Duration duration,
+    required void Function() callback,
     Object? key,
   })
 ```
