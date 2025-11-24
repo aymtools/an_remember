@@ -37,7 +37,7 @@ class _RememberEntry<T> {
           FlutterErrorDetails(
             exception: exception,
             stack: stack,
-            library: 'an_lifecycle_cancellable',
+            library: 'remember',
             context: ErrorDescription('remember $T run onDispose error'),
           ),
         );
@@ -97,8 +97,8 @@ abstract class RememberComposer {
   T _getOrCreate<T extends Object>(
       T Function()? factory,
       T Function(Lifecycle)? factory2,
-      void Function(Lifecycle, T)? onCreate,
-      T Function(T, Lifecycle, Cancellable)? bindLifecycle,
+      T Function(Lifecycle, Cancellable)? factory3,
+      void Function(T, Lifecycle, Cancellable)? onCreate,
       FutureOr<void> Function(T)? onDispose,
       Object? key);
 }
@@ -170,24 +170,28 @@ class _RememberComposer extends RememberComposer {
   _RememberEntry<T> _createEntry<T extends Object>(
     T Function()? factory,
     T Function(Lifecycle)? factory2,
-    void Function(Lifecycle, T)? onCreate,
-    T Function(T, Lifecycle, Cancellable)? bindLifecycle,
+    T Function(Lifecycle, Cancellable)? factory3,
+    void Function(T, Lifecycle, Cancellable)? onCreate,
     FutureOr<void> Function(T)? onDispose,
     Object? key,
   ) {
     final lifecycle = _lifecycle.target!;
-    var data = factory?.call() ?? factory2?.call(lifecycle);
-    if (data == null) {
-      throw 'factory and factory2 cannot be null at the same time';
+    if (lifecycle.currentLifecycleState == LifecycleState.destroyed) {
+      throw Exception('Cannot create remember<$T> when lifecycle is destroyed');
     }
+
     final disposable = Cancellable();
-    if (bindLifecycle != null) {
-      data = bindLifecycle(data, lifecycle, disposable);
+    var data = factory?.call() ??
+        factory2?.call(lifecycle) ??
+        factory3?.call(lifecycle, disposable);
+    if (data == null) {
+      throw Exception(
+          'factory and factory2 and factory3 cannot be null at the same time');
     }
     final result = _RememberEntry<T>(data, key, disposable, onDispose);
 
     final Object? debugCheckForReturnedFuture =
-        onCreate?.call(lifecycle, data) as dynamic;
+        onCreate?.call(data, lifecycle, disposable) as dynamic;
     assert(() {
       if (debugCheckForReturnedFuture is Future) {
         throw FlutterError.fromParts(<DiagnosticsNode>[
@@ -212,8 +216,8 @@ class _RememberComposer extends RememberComposer {
   T _getOrCreate<T extends Object>(
     T Function()? factory,
     T Function(Lifecycle)? factory2,
-    void Function(Lifecycle, T)? onCreate,
-    T Function(T, Lifecycle, Cancellable)? bindLifecycle,
+    T Function(Lifecycle, Cancellable)? factory3,
+    void Function(T, Lifecycle, Cancellable)? onCreate,
     FutureOr<void> Function(T)? onDispose,
     Object? key,
   ) {
@@ -229,16 +233,15 @@ class _RememberComposer extends RememberComposer {
       (entity as _RememberEntry<T>).onDispose = onDispose;
       return entity.value;
     } else {
-      final newEntry = _createEntry(
-          factory, factory2, onCreate, bindLifecycle, onDispose, key);
+      final newEntry =
+          _createEntry(factory, factory2, factory3, onCreate, onDispose, key);
 
       entity?._disposable.cancel();
-      // if (entity != null) {
-      //   /// 此处需要一个等待 嵌套的 build 销毁
-      //   WidgetsBinding.instance
-      //       .addPostFrameCallback((_) => entity._safeInvokeOnDispose());
-      // }
-      _values[currKey] = newEntry;
+
+      if (newEntry._disposable.isAvailable) {
+        /// 创建过程中被取消了 不进行保存
+        _values[currKey] = newEntry;
+      }
       return newEntry.value;
     }
   }
@@ -277,22 +280,37 @@ class _RememberComposerObserver with LifecycleEventObserver {
 extension BuildContextLifecycleRememberExt on BuildContext {
   /// 以当前[context] 记住该对象，并且以后将再次返回该对象
   /// * 调用顺序、[T]和 [key] 确定是否为同一个对象 如果发生了变化则重新创建
-  /// * [factory] 和 [factory2] 如何构建这个对象，不能同时为空, [factory] 优先级高于 [factory2]
+  /// * [factory],[factory2],[factory3]如何构建这个对象，不能同时为空, [factory] 优先级高于 [factory2] 优先于 [factory3]
+  /// * [bindLifecycle] 已过时请使用[factory3] 绑定到生命周期并使用返回的结果内容，参数[Cancellable]是当前[remember]的销毁状态, 调用时机优先于[onCreate]
   /// * [onCreate] 创建完成时的处理
-  /// * [bindLifecycle] 绑定到生命周期并使用返回的结果内容，参数[Cancellable]是当前[remember]的销毁状态, 调用时机优先于[onCreate]
   /// * [onDispose] 定义销毁时如何处理，晚于[context]的[dispose],**非常注意：不可使用[context]相关内容**
   T remember<T extends Object>(
       {T Function()? factory,
       T Function(Lifecycle)? factory2,
+      T Function(Lifecycle, Cancellable)? factory3,
+      @Deprecated('use factory3')
       T Function(T, Lifecycle, Cancellable)? bindLifecycle,
-      void Function(Lifecycle, T)? onCreate,
+      void Function(T, Lifecycle, Cancellable)? onCreate,
       FutureOr<void> Function(T)? onDispose,
       Object? key}) {
-    if (factory == null && factory2 == null) {
-      throw 'factory and factory2 cannot be null at the same time';
+    if (factory == null && factory2 == null && factory3 == null) {
+      throw Exception(
+          'factory and factory2 and factory3 cannot be null at the same time');
     }
+
     if (!mounted) {
-      throw 'context has not been mounted';
+      throw Exception('context has not been mounted');
+    }
+
+    /// 兼容旧版 bindLifecycle 参数
+    if (bindLifecycle != null) {
+      final f3 = factory3;
+      factory3 = (l, c) {
+        var r = factory?.call() ?? factory2?.call(l) ?? f3?.call(l, c);
+        r = r as T;
+        r = bindLifecycle(r, l, c);
+        return r;
+      };
     }
 
     RememberComposer? composer;
@@ -307,6 +325,6 @@ extension BuildContextLifecycleRememberExt on BuildContext {
       _currComposer = composer;
     }
     return composer._getOrCreate<T>(
-        factory, factory2, onCreate, bindLifecycle, onDispose, key);
+        factory, factory2, factory3, onCreate, onDispose, key);
   }
 }

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:an_lifecycle_cancellable/an_lifecycle_cancellable.dart'
     show FlexibleKey, LifecycleTickerProviderExt;
 import 'package:anlifecycle/anlifecycle.dart';
+import 'package:cancellable/cancellable.dart';
 import 'package:flutter/widgets.dart';
 import 'package:remember/src/remember_listenable.dart';
 
@@ -19,7 +20,7 @@ extension RememberControllersExt on BuildContext {
     double lowerBound = 0.0,
     double upperBound = 1.0,
     AnimationBehavior animationBehavior = AnimationBehavior.normal,
-    void Function(Lifecycle, AnimationController)? onCreate,
+    void Function(AnimationController, Lifecycle, Cancellable)? onCreate,
     FutureOr<void> Function(AnimationController)? onDispose,
     bool listen = false,
     Object? key,
@@ -56,7 +57,7 @@ extension RememberControllersExt on BuildContext {
     Duration? reverseDuration,
     String? debugLabel,
     AnimationBehavior animationBehavior = AnimationBehavior.normal,
-    void Function(Lifecycle, AnimationController)? onCreate,
+    void Function(AnimationController, Lifecycle, Cancellable)? onCreate,
     FutureOr<void> Function(AnimationController)? onDispose,
     bool listen = false,
     Object? key,
@@ -89,7 +90,7 @@ extension RememberControllersExt on BuildContext {
   TextEditingController rememberTextEditingController({
     TextEditingValue? value,
     String? text,
-    void Function(Lifecycle, TextEditingController)? onCreate,
+    void Function(TextEditingController, Lifecycle, Cancellable)? onCreate,
     FutureOr<void> Function(TextEditingController)? onDispose,
     bool listen = false,
     Object? key,

@@ -50,17 +50,16 @@ class HomeRememberDemo extends StatelessWidget {
 
     final bgRGB = context.rememberValueNotifier(
       factory: () => _int2RGB(tapTimes.value),
-      onCreate: (l, d) {
-        tapTimes.addCVListener(
-            l.makeLiveCancellable(), (value) => d.value = _int2RGB(value));
+      onCreate: (d, l, c) {
+        tapTimes.addCVListener(c, (value) => d.value = _int2RGB(value));
       },
       listen: true,
     );
 
     final resetTapTimes = context.rememberValueNotifier(
       value: 0,
-      onCreate: (l, d) {
-        tapTimes.addCVListener(l.makeLiveCancellable(), (v) {
+      onCreate: (d, l, c) {
+        tapTimes.addCVListener(c, (v) {
           if (v == 0) {
             d.value++;
           }

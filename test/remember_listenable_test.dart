@@ -31,12 +31,12 @@ void main() {
       final page = Builder(builder: (context) {
         a = context.rememberListenable(
           factory: ChangeNotifierTester.new,
-          onCreate: (_, __) => aCallCreate = true,
+          onCreate: (_, __, ___) => aCallCreate = true,
           onDispose: (v) => v.dispose(),
         );
         b = context.rememberListenable(
           factory: ChangeNotifierTester.new,
-          onCreate: (_, __) => bCallCreate = true,
+          onCreate: (_, __, ___) => bCallCreate = true,
           onDispose: (v) => v.dispose(),
         );
         return const PageTester();
@@ -93,12 +93,12 @@ void main() {
       final page = Builder(builder: (context) {
         a = context.rememberListenable(
           factory: ChangeNotifierTester.new,
-          onCreate: (_, __) => aCallCreate = true,
+          onCreate: (_, __, ___) => aCallCreate = true,
           onDispose: (v) => v.dispose(),
         );
         b = context.rememberListenable(
           factory: ChangeNotifierTester.new,
-          onCreate: (_, __) => bCallCreate = true,
+          onCreate: (_, __, ___) => bCallCreate = true,
           onDispose: (v) => v.dispose(),
         );
         return const PageTester();
@@ -161,7 +161,7 @@ void main() {
       final page = Builder(builder: (context) {
         final a1 = context.rememberListenable(
           factory: ChangeNotifierTester.new,
-          onCreate: (_, __) => aCallCreate++,
+          onCreate: (_, __, ___) => aCallCreate++,
           onDispose: (v) {
             v.dispose();
             aCallDispose++;
@@ -169,7 +169,7 @@ void main() {
         );
         final b1 = context.rememberListenable(
           factory: ChangeNotifierTester.new,
-          onCreate: (_, __) => bCallCreate++,
+          onCreate: (_, __, ___) => bCallCreate++,
           onDispose: (v) {
             v.dispose();
             bCallDispose++;
@@ -297,12 +297,12 @@ void main() {
       final page = Builder(builder: (context) {
         final a1 = context.rememberChangeNotifier(
           factory: ChangeNotifierTester.new,
-          onCreate: (_, __) => aCallCreate++,
+          onCreate: (_, __, ___) => aCallCreate++,
           onDispose: (v) => aCallDispose++,
         );
         final b1 = context.rememberListenable(
           factory: ChangeNotifierTester.new,
-          onCreate: (_, __) => bCallCreate++,
+          onCreate: (_, __, ___) => bCallCreate++,
           onDispose: (v) => bCallDispose++,
         );
         if (element == null) {

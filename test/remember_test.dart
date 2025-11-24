@@ -34,12 +34,12 @@ void main() {
       final page = Builder(builder: (context) {
         a = context.remember(
           factory: () => Object(),
-          onCreate: (_, __) => aCallCreate = true,
+          onCreate: (_, __, ___) => aCallCreate = true,
           onDispose: (_) => aCallDispose = true,
         );
         b = context.remember(
           factory: () => Object(),
-          onCreate: (_, __) => bCallCreate = true,
+          onCreate: (_, __, ___) => bCallCreate = true,
           onDispose: (_) => bCallDispose = true,
         );
         return const PageTester();
@@ -95,12 +95,12 @@ void main() {
       final page = Builder(builder: (context) {
         a = context.remember(
           factory: () => Object(),
-          onCreate: (_, __) => aCallCreate = true,
+          onCreate: (_, __, ___) => aCallCreate = true,
           onDispose: (_) => aCallDispose = true,
         );
         b = context.remember(
           factory: () => Object(),
-          onCreate: (_, __) => bCallCreate = true,
+          onCreate: (_, __, ___) => bCallCreate = true,
           onDispose: (_) => bCallDispose = true,
         );
         c = context.remember(factory: () => Object());
@@ -165,12 +165,12 @@ void main() {
       final page = Builder(builder: (context) {
         final a1 = context.remember(
           factory: () => Object(),
-          onCreate: (_, __) => aCallCreate++,
+          onCreate: (_, __, ___) => aCallCreate++,
           onDispose: (_) => aCallDispose++,
         );
         final b1 = context.remember(
           factory: () => Object(),
-          onCreate: (_, __) => bCallCreate++,
+          onCreate: (_, __, ___) => bCallCreate++,
           onDispose: (_) => bCallDispose++,
         );
         if (element == null) {

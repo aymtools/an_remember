@@ -76,8 +76,8 @@ class HomeRememberDemo extends StatelessWidget {
   /// the same object in the future.
   /// * The call order, [T], and [key] determine whether it is the same
   ///   object. If any of them change, a new object will be created.
-  /// * [factory] and [factory2] define how to construct this object.
-  ///   They cannot both be null. [factory] has higher priority than [factory2].
+  /// * [factory] and [factory2] and [factory3] define how to construct this object.
+  ///   They cannot both be null. [factory] has higher priority than [factory2] than [factory3].
   /// * [onCreate] defines the handling logic after the object is created.
   /// * [onDispose] defines how to handle cleanup when the object is disposed.
   ///   It runs after [context]'s [dispose]. **Important: Do NOT use
@@ -85,7 +85,8 @@ class HomeRememberDemo extends StatelessWidget {
   T remember<T extends Object>(
       {T Function()? factory,
       T Function(Lifecycle)? factory2,
-      void Function(Lifecycle, T)? onCreate,
+      T Function(Lifecycle, Cancellable)? factory3,
+      void Function(T, Lifecycle, Cancellable)? onCreate,
       FutureOr<void> Function(T)? onDispose,
       Object? key})
       
@@ -97,7 +98,7 @@ class HomeRememberDemo extends StatelessWidget {
     int initialIndex = 0,
     Duration? animationDuration,
     required int length,
-    void Function(Lifecycle, TabController)? onCreate,
+    void Function(TabController, Lifecycle, Cancellable)? onCreate,
     FutureOr<void> Function(TabController)? onDispose,
     Object? key,
   })
@@ -115,7 +116,7 @@ class HomeRememberDemo extends StatelessWidget {
     double lowerBound = 0.0,
     double upperBound = 1.0,
     AnimationBehavior animationBehavior = AnimationBehavior.normal,
-    void Function(Lifecycle, AnimationController)? onCreate,
+    void Function(AnimationBehavior, Lifecycle, Cancellable)? onCreate,
     FutureOr<void> Function(AnimationController)? onDispose,
     Object? key,
   })
@@ -128,7 +129,7 @@ class HomeRememberDemo extends StatelessWidget {
     double initialScrollOffset = 0.0,
     bool keepScrollOffset = true,
     String? debugLabel,
-    void Function(Lifecycle, ScrollController)? onCreate,
+    void Function(ScrollController, Lifecycle, Cancellable)? onCreate,
     FutureOr<void> Function(ScrollController)? onDispose,
     Object? key,
   })
@@ -136,7 +137,7 @@ class HomeRememberDemo extends StatelessWidget {
   /// Quickly creates a reusable [ValueNotifier].
   /// * The call order, [T], and [key] determine whether it is considered
   ///   the same object. If any of these change, a new object will be created.
-  /// * [value], [factory], and [factory2] define how to initialize the
+  /// * [value], [factory], [factory2], and [factory3] define how to initialize the
   ///   [ValueNotifier]. At least one must be non-null. These are not used
   ///   as keys for updates.
   /// * [listen] enables the current [context] to automatically listen to
@@ -146,7 +147,8 @@ class HomeRememberDemo extends StatelessWidget {
     T? value,
     T Function()? factory,
     T Function(Lifecycle)? factory2,
-    void Function(Lifecycle, ValueNotifier<T>)? onCreate,
+    T Function(Lifecycle, Cancellable)? factory3,
+    void Function(ValueNotifier<T>, Lifecycle, Cancellable)? onCreate,
     FutureOr<void> Function(ValueNotifier<T>)? onDispose,
     bool listen = false,
     Object? key,
@@ -156,7 +158,7 @@ class HomeRememberDemo extends StatelessWidget {
   TextEditingController rememberTextEditingController({
     TextEditingValue? value,
     String? text,
-    void Function(Lifecycle, TextEditingController)? onCreate,
+    void Function(TextEditingController, Lifecycle, Cancellable)? onCreate,
     FutureOr<void> Function(TextEditingController)? onDispose,
     bool listen = false,
     Object? key,
@@ -166,7 +168,7 @@ class HomeRememberDemo extends StatelessWidget {
   T rememberChangeNotifier<T extends ChangeNotifier>({
     T Function()? factory,
     T Function(Lifecycle)? factory2,
-    void Function(Lifecycle, T)? onCreate,
+    void Function(T, Lifecycle, Cancellable)? onCreate,
     FutureOr<void> Function(T)? onDispose,
     bool listen = false,
     Object? key,

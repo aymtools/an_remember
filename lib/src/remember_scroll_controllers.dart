@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:an_lifecycle_cancellable/an_lifecycle_cancellable.dart'
     show FlexibleKey, LifecycleTickerProviderExt;
 import 'package:anlifecycle/anlifecycle.dart';
+import 'package:cancellable/cancellable.dart';
 import 'package:flutter/material.dart';
 import 'package:remember/src/remember_listenable.dart';
 
@@ -18,7 +19,7 @@ extension RememberScrollControllersExt on BuildContext {
     int initialIndex = 0,
     Duration? animationDuration,
     required int length,
-    void Function(Lifecycle, TabController)? onCreate,
+    void Function(TabController, Lifecycle, Cancellable)? onCreate,
     FutureOr<void> Function(TabController)? onDispose,
     bool listen = false,
     Object? key,
@@ -48,7 +49,7 @@ extension RememberScrollControllersExt on BuildContext {
     double initialScrollOffset = 0.0,
     bool keepScrollOffset = true,
     String? debugLabel,
-    void Function(Lifecycle, ScrollController)? onCreate,
+    void Function(ScrollController, Lifecycle, Cancellable)? onCreate,
     FutureOr<void> Function(ScrollController)? onDispose,
     bool listen = false,
     Object? key,
@@ -73,7 +74,7 @@ extension RememberScrollControllersExt on BuildContext {
     int initialPage = 0,
     bool keepPage = true,
     double viewportFraction = 1.0,
-    void Function(Lifecycle, PageController)? onCreate,
+    void Function(PageController, Lifecycle, Cancellable)? onCreate,
     FutureOr<void> Function(PageController)? onDispose,
     bool listen = false,
     Object? key,
