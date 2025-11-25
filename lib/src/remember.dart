@@ -281,15 +281,12 @@ extension BuildContextLifecycleRememberExt on BuildContext {
   /// 以当前[context] 记住该对象，并且以后将再次返回该对象
   /// * 调用顺序、[T]和 [key] 确定是否为同一个对象 如果发生了变化则重新创建
   /// * [factory],[factory2],[factory3]如何构建这个对象，不能同时为空, [factory] 优先级高于 [factory2] 优先于 [factory3]
-  /// * [bindLifecycle] 已过时请使用[factory3] 绑定到生命周期并使用返回的结果内容，参数[Cancellable]是当前[remember]的销毁状态, 调用时机优先于[onCreate]
   /// * [onCreate] 创建完成时的处理
   /// * [onDispose] 定义销毁时如何处理，晚于[context]的[dispose],**非常注意：不可使用[context]相关内容**
   T remember<T extends Object>(
       {T Function()? factory,
       T Function(Lifecycle)? factory2,
       T Function(Lifecycle, Cancellable)? factory3,
-      @Deprecated('use factory3')
-      T Function(T, Lifecycle, Cancellable)? bindLifecycle,
       void Function(T, Lifecycle, Cancellable)? onCreate,
       FutureOr<void> Function(T)? onDispose,
       Object? key}) {
@@ -300,17 +297,6 @@ extension BuildContextLifecycleRememberExt on BuildContext {
 
     if (!mounted) {
       throw Exception('context has not been mounted');
-    }
-
-    /// 兼容旧版 bindLifecycle 参数
-    if (bindLifecycle != null) {
-      final f3 = factory3;
-      factory3 = (l, c) {
-        var r = factory?.call() ?? factory2?.call(l) ?? f3?.call(l, c);
-        r = r as T;
-        r = bindLifecycle(r, l, c);
-        return r;
-      };
     }
 
     RememberComposer? composer;

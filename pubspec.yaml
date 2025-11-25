@@ -1,6 +1,6 @@
 name: remember
 description: "A utility similar to Compose’s remember, which leverages anlifecycle to let Flutter’s BuildContext remember an instance and provide corresponding management functions."
-version: 1.3.0
+version: 2.0.0
 homepage: https://github.com/aymtools/an_remember/
 issue_tracker: https://github.com/aymtools/an_remember/issues
 
@@ -18,10 +18,10 @@ dependencies:
   flutter:
     sdk: flutter
 
-  cancellable: ^2.3.1
-  anlifecycle: ^3.4.1
+  cancellable: ^2.4.0
+  anlifecycle: ^3.5.1
   weak_collections: ^1.5.1
-  an_lifecycle_cancellable: ^2.4.3
+  an_lifecycle_cancellable: ^2.5.2
 
 dev_dependencies:
   flutter_test:

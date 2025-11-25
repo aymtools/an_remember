@@ -1,10 +1,10 @@
-## 1.3.0
+## 2.0.0
 
-* bindLifecycle is marked as deprecated.
 * The newly added factory3 includes a cancellable, allowing the alive state to be verified.
 
 ### Breaking Changes
 
+* bindLifecycle has been removed. Please use factory3 instead.
 * Add a cancellable in the onCreate callback to verify the alive state.
 
 ## 1.2.0
