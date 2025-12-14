@@ -35,7 +35,7 @@ extension RememberListenableExt on BuildContext {
         onCreate: (v, l, c) {
           if (listen && this is Element) {
             final rContext = WeakReference(this);
-            v.addCListener(l.makeLiveCancellable(), () {
+            v.addCListener(c, () {
               final element = rContext.target as Element?;
               if (element != null) {
                 element.markNeedsBuild();
