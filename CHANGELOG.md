@@ -1,3 +1,7 @@
+## 2.1.0
+
+* Upgrading Dependencies.
+
 ## 2.0.0
 
 * The newly added factory3 includes a cancellable, allowing the alive state to be verified.
