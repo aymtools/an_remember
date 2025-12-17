@@ -1,10 +1,7 @@
 import 'dart:async';
 
 import 'package:an_lifecycle_cancellable/an_lifecycle_cancellable.dart'
-    show
-        LifecycleObserverRegistryCacnellable,
-        ListenableCancellable,
-        CancellableValueNotifier;
+    show ListenableCancellable, CancellableValueNotifier;
 import 'package:anlifecycle/anlifecycle.dart';
 import 'package:cancellable/cancellable.dart';
 import 'package:flutter/widgets.dart';
