@@ -1,3 +1,7 @@
+## 2.2.0
+
+* add rememberLiveCancellable
+
 ## 2.1.0
 
 * Upgrading Dependencies.
