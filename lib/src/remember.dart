@@ -46,11 +46,6 @@ class _RememberEntry<T> {
   }
 }
 
-final Finalizer<_RememberComposer> _finalizer =
-    Finalizer<_RememberComposer>((observer) {
-  observer._safeCallDisposer(callDetach: false);
-});
-
 final _empty = List.filled(0, null);
 
 abstract class RememberComposer {
@@ -140,12 +135,15 @@ set _currComposer(RememberComposer value) {
 class _RememberComposer extends RememberComposer {
   final WeakReference<Lifecycle> _lifecycle;
   final WeakReference<BuildContext> _context;
+  final Finalizer<_RememberComposer> _finalizer;
+
   bool _isDisposed = false;
 
   @override
   BuildContext? get _host => _context.target;
 
-  _RememberComposer._(BuildContext context, Lifecycle lifecycle)
+  _RememberComposer._(
+      BuildContext context, Lifecycle lifecycle, this._finalizer)
       : _context = WeakReference(context),
         _lifecycle = WeakReference(lifecycle) {
     _finalizer.attach(context, this, detach: _context);
@@ -255,6 +253,11 @@ class _RememberComposerObserver with LifecycleEventObserver {
   final WeakHashMap<BuildContext, _RememberComposer> _managers =
       WeakHashMap.identity();
 
+  Finalizer<_RememberComposer>? _finalizer =
+      Finalizer<_RememberComposer>((observer) {
+    observer._safeCallDisposer(callDetach: false);
+  });
+
   _RememberComposerObserver(Lifecycle lifecycle)
       : _lifecycle = WeakReference(lifecycle) {
     lifecycle.addLifecycleObserver(this);
@@ -269,11 +272,12 @@ class _RememberComposerObserver with LifecycleEventObserver {
       value._safeCallDisposer();
     }
     _rememberComposers.remove(owner);
+    _finalizer = null;
   }
 
   _RememberComposer getComposer(BuildContext context) {
-    return _managers.putIfAbsent(
-        context, () => _RememberComposer._(context, _lifecycle.target!));
+    return _managers.putIfAbsent(context,
+        () => _RememberComposer._(context, _lifecycle.target!, _finalizer!));
   }
 }
 

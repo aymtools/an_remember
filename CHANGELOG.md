@@ -1,6 +1,10 @@
+## 2.3.0
+
+* add rememberGlobalKey.
+
 ## 2.2.0
 
-* add rememberLiveCancellable
+* add rememberLiveCancellable.
 
 ## 2.1.0
 

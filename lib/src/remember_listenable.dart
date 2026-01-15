@@ -10,7 +10,7 @@ import 'package:remember/src/remember.dart';
 extension RememberListenableExt on BuildContext {
   /// 快速生成一个可重用的 Listenable
   /// * 调用顺序、[T]和 [key] 确定是否为同一个对象 如果发生了变化则重新创建
-  /// * [value]， [factory]， [factory2]， [factory3] 确定如何初始化的创建一个 ValueNotifier 必须有一个不能为空 不作为更新key
+  /// * [value]， [factory]， [factory2]， [factory3] 确定如何初始化的创建一个 Listenable 必须有一个不能为空 不作为更新key
   /// * [listen] 当前的 Context 自动监听生成的 ValueNotifier 只有首次有效 后续变化无效
   /// * [onCreate] 创建完成时的处理
   /// * [onDispose] 定义销毁时如何处理，晚于[context]的[dispose],**非常注意：不可使用[context]相关内容**
@@ -31,12 +31,10 @@ extension RememberListenableExt on BuildContext {
         factory3: factory3,
         onCreate: (v, l, c) {
           if (listen && this is Element) {
-            final rContext = WeakReference(this);
+            final rSetState = WeakReference((this as Element).markNeedsBuild);
             v.addCListener(c, () {
-              final element = rContext.target as Element?;
-              if (element != null) {
-                element.markNeedsBuild();
-              }
+              final element = rSetState.target;
+              element?.call();
             });
           }
           onCreate?.call(v, l, c);
@@ -49,7 +47,7 @@ extension RememberListenableExt on BuildContext {
 extension RememberChangeNotifierExt on BuildContext {
   /// 快速生成一个可重用的 ChangeNotifier
   /// * 调用顺序、[T]和 [key] 确定是否为同一个对象 如果发生了变化则重新创建
-  /// * [factory]， [factory2]， [factory3] 确定如何初始化的创建一个 ValueNotifier 必须有一个不能为空 不作为更新key
+  /// * [factory]， [factory2]， [factory3] 确定如何初始化的创建一个 ChangeNotifier 必须有一个不能为空 不作为更新key
   /// * [listen] 当前的 Context 自动监听生成的 ValueNotifier 只有首次有效 后续变化无效
   /// * [onCreate] 创建完成时的处理
   /// * [onDispose] 定义销毁时如何处理,已自动调用[dispose]，晚于[context]的[dispose],**非常注意：不可使用[context]相关内容**
