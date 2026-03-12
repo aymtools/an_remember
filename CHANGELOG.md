@@ -1,3 +1,7 @@
+## 2.4.0
+
+* rememberStream adds support for converter and repeatLatest.
+
 ## 2.3.0
 
 * add rememberGlobalKey.

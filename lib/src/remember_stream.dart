@@ -1,41 +1,63 @@
 import 'dart:async';
 
 import 'package:an_lifecycle_cancellable/an_lifecycle_cancellable.dart'
-    show FlexibleKey, StreamLifecycleExt;
+    show FlexibleKey, StreamLifecycleExt, StreamToolsExt;
 import 'package:anlifecycle/anlifecycle.dart';
+import 'package:cancellable/cancellable.dart';
 import 'package:flutter/widgets.dart';
 import 'package:remember/src/remember.dart';
 
 extension RememeberStreamExt on BuildContext {
   /// 快速生成一个可重用的 Stream
-  /// * 调用顺序、[T]、[key]、[state]、[repeatLastOnStateAtLeast]、[closeWhenCancel]、[cancelOnError] 确定是否为同一个对象 如果发生了变化则重新创建
+  /// * 调用顺序、[T]、[key]、[state]、[repeatLastOnStateAtLeast]、[closeWhenCancel]、
+  /// [cancelOnError]、[repeatLatest]、[repeatLatestError] 确定是否为同一个对象 如果发生了变化则重新创建
+  /// * [converter] 转换器将[factory] 产出的 stream 进行最终变换
   Stream<T> rememberStream<T>({
     Stream<T> Function()? factory,
     Stream<T> Function(Lifecycle)? factory2,
+    Stream<T> Function(Stream<T>, Lifecycle, Cancellable)? converter,
     LifecycleState state = LifecycleState.created,
     bool repeatLastOnStateAtLeast = false,
-    bool closeWhenCancel = false,
+    bool closeWhenCancel = true,
     bool? cancelOnError,
+    bool repeatLatest = false,
+    bool repeatLatestError = false,
     Object? key,
   }) {
     return remember<Stream<T>>(
-      factory2: (l) {
+      factory3: (l, c) {
         Stream<T> stream = factory != null
             ? factory()
             : (factory2 != null ? factory2(l) : Stream<T>.empty());
-        return stream.bindLifecycle(l,
-            state: state,
-            repeatLastOnStateAtLeast: repeatLastOnStateAtLeast,
-            closeWhenCancel: closeWhenCancel,
-            cancelOnError: cancelOnError);
+
+        var result = stream;
+        result = stream.bindCancellable(c, closeWhenCancel: closeWhenCancel);
+        if (state > LifecycleState.created) {
+          result = stream.bindLifecycle(l,
+              state: state,
+              repeatLastOnStateAtLeast: repeatLastOnStateAtLeast,
+              closeWhenCancel: closeWhenCancel,
+              cancelOnError: cancelOnError);
+        }
+        if (repeatLatest) {
+          result = result.repeatLatest(repeatError: repeatLatestError);
+        }
+
+        if (converter != null) {
+          result = converter(result, l, c);
+        }
+        return result;
       },
-      key: FlexibleKey(
-          state, repeatLastOnStateAtLeast, closeWhenCancel, cancelOnError, key),
+      key: FlexibleKey(state, repeatLastOnStateAtLeast, closeWhenCancel,
+          cancelOnError, repeatLatest, repeatLatestError, key),
     );
   }
 
   /// 快速生成一个可重用的 Stream
-  /// * 调用顺序、[T]、[key]、[value]、[error]、[stackTrace]、[future]、[futures]、[elements]、[state]、[repeatLastOnStateAtLeast]、[closeWhenCancel]、[cancelOnError] 确定是否为同一个对象 如果发生了变化则重新创建
+  /// * 调用顺序、[T]、[key]、[value]、[error]、[stackTrace]、[future]、[futures]、
+  /// [elements]、[state]、[repeatLastOnStateAtLeast]、[closeWhenCancel]、
+  /// [cancelOnError]、[repeatLatest]、[repeatLatestError] 确定是否为同一个对象 如果发生了变化则重新创建
+  /// * [converter] 转换器将  产出的 stream 进行最终变换
   Stream<T> rememberStreamForm<T>({
     T? value,
     Object? error,
@@ -43,10 +65,13 @@ extension RememeberStreamExt on BuildContext {
     Future<T>? future,
     Iterable<Future<T>>? futures,
     Iterable<T>? elements,
+    Stream<T> Function(Stream<T>, Lifecycle, Cancellable)? converter,
     LifecycleState state = LifecycleState.created,
     bool repeatLastOnStateAtLeast = false,
-    bool closeWhenCancel = false,
+    bool closeWhenCancel = true,
     bool? cancelOnError,
+    bool repeatLatest = false,
+    bool repeatLatestError = false,
     Object? key,
   }) {
     return rememberStream<T>(
@@ -69,53 +94,74 @@ extension RememeberStreamExt on BuildContext {
         }
         return stream;
       },
+      converter: converter,
       state: state,
       repeatLastOnStateAtLeast: repeatLastOnStateAtLeast,
       closeWhenCancel: closeWhenCancel,
       cancelOnError: cancelOnError,
+      repeatLatest: repeatLatest,
+      repeatLatestError: repeatLatestError,
       key: FlexibleKey(
           'form', value, error, stackTrace, future, futures, elements, key),
     );
   }
 
   /// 快速生成一个可重用的 Stream.periodic
-  /// * 调用顺序、[T]、[key]、[period]、 [state]、[repeatLastOnStateAtLeast]、[closeWhenCancel]、[cancelOnError] 确定是否为同一个对象 如果发生了变化则重新创建
+  /// * 调用顺序、[T]、[key]、[period]、 [state]、[repeatLastOnStateAtLeast]、
+  /// [closeWhenCancel]、[cancelOnError]、[repeatLatest]、[repeatLatestError]
+  /// 确定是否为同一个对象 如果发生了变化则重新创建
+  /// * [converter] 转换器将  产出的 stream 进行最终变换
   Stream<T> rememberStreamPeriodic<T>({
     required Duration period,
     T Function(int computationCount)? computation,
+    Stream<T> Function(Stream<T>, Lifecycle, Cancellable)? converter,
     LifecycleState state = LifecycleState.created,
     bool repeatLastOnStateAtLeast = false,
-    bool closeWhenCancel = false,
+    bool closeWhenCancel = true,
     bool? cancelOnError,
+    bool repeatLatest = false,
+    bool repeatLatestError = false,
     Object? key,
   }) {
     return rememberStream<T>(
       factory: () => Stream.periodic(period, computation),
+      converter: converter,
       state: state,
       repeatLastOnStateAtLeast: repeatLastOnStateAtLeast,
       closeWhenCancel: closeWhenCancel,
       cancelOnError: cancelOnError,
+      repeatLatest: repeatLatest,
+      repeatLatestError: repeatLatestError,
       key: FlexibleKey('periodic', period, key),
     );
   }
 
   /// 快速生成一个可重用的 Stream.eventTransformed
-  /// * 调用顺序、[T]、[key]、[source]、[state]、[repeatLastOnStateAtLeast]、[closeWhenCancel]、[cancelOnError] 确定是否为同一个对象 如果发生了变化则重新创建
+  /// * 调用顺序、[T]、[key]、[source]、[state]、[repeatLastOnStateAtLeast]、
+  /// [closeWhenCancel]、[cancelOnError]、[repeatLatest]、[repeatLatestError]
+  /// 确定是否为同一个对象 如果发生了变化则重新创建
+  /// * [converter] 转换器将  产出的 stream 进行最终变换
   Stream<T> rememberStreamEventTransformed<T>({
     required Stream<dynamic> source,
     required EventSink<dynamic> Function(EventSink<T> sink) mapSink,
+    Stream<T> Function(Stream<T>, Lifecycle, Cancellable)? converter,
     LifecycleState state = LifecycleState.created,
     bool repeatLastOnStateAtLeast = false,
-    bool closeWhenCancel = false,
+    bool closeWhenCancel = true,
     bool? cancelOnError,
+    bool repeatLatest = false,
+    bool repeatLatestError = false,
     Object? key,
   }) {
     return rememberStream<T>(
       factory: () => Stream.eventTransformed(source, mapSink),
+      converter: converter,
       state: state,
       repeatLastOnStateAtLeast: repeatLastOnStateAtLeast,
       closeWhenCancel: closeWhenCancel,
       cancelOnError: cancelOnError,
+      repeatLatest: repeatLatest,
+      repeatLatestError: repeatLatestError,
       key: FlexibleKey('eventTransformed', source, key),
     );
   }
