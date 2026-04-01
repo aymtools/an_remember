@@ -31,10 +31,12 @@ extension RememberListenableExt on BuildContext {
         factory3: factory3,
         onCreate: (v, l, c) {
           if (listen && this is Element) {
-            final rSetState = WeakReference((this as Element).markNeedsBuild);
+            final rElement = WeakReference((this as Element));
             v.addCListener(c, () {
-              final element = rSetState.target;
-              element?.call();
+              final element = rElement.target;
+              if (element != null && element.mounted && !element.dirty) {
+                element.markNeedsBuild();
+              }
             });
           }
           onCreate?.call(v, l, c);
