@@ -8,3 +8,4 @@ export 'src/remember_listenable.dart';
 export 'src/remember_scroll_controllers.dart';
 export 'src/remember_stream.dart';
 export 'src/remember_timer.dart';
+export 'src/remember_value_notifier.dart';

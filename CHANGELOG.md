@@ -1,3 +1,7 @@
+## 2.5.0
+
+* add rememberValueNotifierTransform and rememberValueNotifierMerge.
+
 ## 2.4.0
 
 * rememberStream adds support for converter and repeatLatest.
