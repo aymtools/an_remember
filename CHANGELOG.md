@@ -1,3 +1,7 @@
+## 2.6.0
+
+* add rememberValueNotifierAsync and rememberAsyncNotifier.
+
 ## 2.5.0
 
 * add rememberValueNotifierTransform and rememberValueNotifierMerge.
