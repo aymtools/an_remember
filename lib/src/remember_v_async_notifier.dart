@@ -10,10 +10,11 @@ import 'package:an_lifecycle_cancellable/an_lifecycle_cancellable.dart'
 
 extension RememberAsyncValueNotifierAdvancedExt on BuildContext {
   /// 快速生成一个可重用的 ValueNotifier 类型为 AsyncData
-  /// * 调用顺序,[T],[key],[initialData],[error],[stackTrace],[future],[stream],[cancelOnError] 确定是否为同一个对象 如果发生了变化则重新创建
+  /// * 调用顺序,[T],[key],[initialData],[initialAllowNull],[error],[stackTrace],[future],[stream],[cancelOnError] 确定是否为同一个对象 如果发生了变化则重新创建
   /// * [listen] 当前的 Context 自动监听生成的 ValueNotifier 只有首次有效 后续变化无效
-  ValueNotifier<AsyncData<T>> rememberAsyncNotifier<T extends Object>({
+  ValueNotifier<AsyncData<T>> rememberAsyncNotifier<T>({
     T? initialData,
+    bool initialAllowNull = false,
     Object? error,
     StackTrace? stackTrace,
     Future<T>? future,
@@ -27,10 +28,8 @@ extension RememberAsyncValueNotifierAdvancedExt on BuildContext {
   }) {
     return rememberValueNotifier(
       factory: () {
-        assert(future == null || stream == null,
-            'future and stream cannot both be non-null');
-        if (initialData != null) {
-          return AsyncData<T>.value(initialData);
+        if (initialData != null || initialAllowNull) {
+          return AsyncData<T>.value(initialData as T);
         } else if (error != null) {
           return AsyncData<T>.error(error, stackTrace);
         } else {
@@ -43,7 +42,8 @@ extension RememberAsyncValueNotifierAdvancedExt on BuildContext {
               .bindCancellable(cancellable)
               .then(notifier.toValue)
               .catchError(notifier.toError);
-        } else if (stream != null) {
+        }
+        if (stream != null) {
           stream.bindCancellable(cancellable, closeWhenCancel: true).listen(
               notifier.toValue,
               onError: notifier.toError,
@@ -53,8 +53,8 @@ extension RememberAsyncValueNotifierAdvancedExt on BuildContext {
       },
       onDispose: onDispose,
       listen: listen,
-      key: FlexibleKey('rememberAsyncNotifier', initialData, error, stackTrace,
-          future, stream, cancelOnError, key),
+      key: FlexibleKey('rememberAsyncNotifier', initialData, initialAllowNull,
+          error, stackTrace, future, stream, cancelOnError, key),
     );
   }
 
@@ -86,7 +86,8 @@ extension RememberAsyncValueNotifierAdvancedExt on BuildContext {
             }
             onError?.call(error, stackTrace);
           });
-        } else if (stream != null) {
+        }
+        if (stream != null) {
           stream.bindCancellable(cancellable, closeWhenCancel: true).listen(
             (value) {
               notifier.value = value;
