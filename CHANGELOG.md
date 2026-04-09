@@ -1,3 +1,7 @@
+## 2.6.1
+
+* rememberValueNotifierAsync adds functional creation of Streams and Futures.
+
 ## 2.6.0
 
 * add rememberValueNotifierAsync and rememberAsyncNotifier.

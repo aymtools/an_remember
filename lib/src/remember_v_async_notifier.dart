@@ -18,7 +18,13 @@ extension RememberAsyncValueNotifierAdvancedExt on BuildContext {
     Object? error,
     StackTrace? stackTrace,
     Future<T>? future,
+    Future<T> Function()? fFactory,
+    Future<T> Function(Lifecycle)? fFactory2,
+    Future<T> Function(Lifecycle, Cancellable)? fFactory3,
     Stream<T>? stream,
+    Stream<T> Function()? sfFactory,
+    Stream<T> Function(Lifecycle)? sfFactory2,
+    Stream<T> Function(Lifecycle, Cancellable)? sfFactory3,
     bool? cancelOnError,
     void Function(ValueNotifier<AsyncData<T>>, Lifecycle, Cancellable)?
         onCreate,
@@ -37,18 +43,21 @@ extension RememberAsyncValueNotifierAdvancedExt on BuildContext {
         }
       },
       onCreate: (notifier, lifecycle, cancellable) {
-        if (future != null) {
-          future
-              .bindCancellable(cancellable)
-              .then(notifier.toValue)
-              .catchError(notifier.toError);
-        }
-        if (stream != null) {
-          stream.bindCancellable(cancellable, closeWhenCancel: true).listen(
-              notifier.toValue,
-              onError: notifier.toError,
-              cancelOnError: cancelOnError);
-        }
+        future ??= fFactory?.call();
+        future ??= fFactory2?.call(lifecycle);
+        future ??= fFactory3?.call(lifecycle, cancellable);
+        future
+            ?.bindCancellable(cancellable)
+            .then(notifier.toValue)
+            .catchError(notifier.toError);
+
+        stream ??= sfFactory?.call();
+        stream ??= sfFactory2?.call(lifecycle);
+        stream ??= sfFactory3?.call(lifecycle, cancellable);
+        stream?.bindCancellable(cancellable, closeWhenCancel: true).listen(
+            notifier.toValue,
+            onError: notifier.toError,
+            cancelOnError: cancelOnError);
         onCreate?.call(notifier, lifecycle, cancellable);
       },
       onDispose: onDispose,
@@ -64,7 +73,13 @@ extension RememberAsyncValueNotifierAdvancedExt on BuildContext {
   ValueNotifier<T> rememberValueNotifierAsync<T>({
     required T initialData,
     Future<T>? future,
+    Future<T> Function()? fFactory,
+    Future<T> Function(Lifecycle)? fFactory2,
+    Future<T> Function(Lifecycle, Cancellable)? fFactory3,
     Stream<T>? stream,
+    Stream<T> Function()? sfFactory,
+    Stream<T> Function(Lifecycle)? sfFactory2,
+    Stream<T> Function(Lifecycle, Cancellable)? sfFactory3,
     bool? cancelOnError,
     Function? onError,
     T Function(ValueNotifier<T>, Object error, StackTrace stackTrace)?
@@ -77,42 +92,46 @@ extension RememberAsyncValueNotifierAdvancedExt on BuildContext {
     return rememberValueNotifier(
       factory: () => initialData,
       onCreate: (notifier, lifecycle, cancellable) {
-        if (future != null) {
-          future.bindCancellable(cancellable).then((value) {
+        future ??= fFactory?.call();
+        future ??= fFactory2?.call(lifecycle);
+        future ??= fFactory3?.call(lifecycle, cancellable);
+        future?.bindCancellable(cancellable).then((value) {
+          notifier.value = value;
+        }).catchError((Object error, StackTrace stackTrace) {
+          if (returnOnError != null) {
+            notifier.value = returnOnError(notifier, error, stackTrace);
+          }
+          onError?.call(error, stackTrace);
+        });
+
+        stream ??= sfFactory?.call();
+        stream ??= sfFactory2?.call(lifecycle);
+        stream ??= sfFactory3?.call(lifecycle, cancellable);
+
+        stream?.bindCancellable(cancellable, closeWhenCancel: true).listen(
+          (value) {
             notifier.value = value;
-          }).catchError((Object error, StackTrace stackTrace) {
+          },
+          onError: (Object error, StackTrace stackTrace) {
             if (returnOnError != null) {
               notifier.value = returnOnError(notifier, error, stackTrace);
             }
-            onError?.call(error, stackTrace);
-          });
-        }
-        if (stream != null) {
-          stream.bindCancellable(cancellable, closeWhenCancel: true).listen(
-            (value) {
-              notifier.value = value;
-            },
-            onError: (Object error, StackTrace stackTrace) {
-              if (returnOnError != null) {
-                notifier.value = returnOnError(notifier, error, stackTrace);
+            if (onError != null) {
+              if (onError is dynamic Function(Object, StackTrace)) {
+                onError(error, stackTrace);
+              } else if (onError is dynamic Function(Object)) {
+                onError(error);
+              } else {
+                throw ArgumentError.value(
+                    onError,
+                    "onError",
+                    "Error handler must accept one Object or one Object and a StackTrace"
+                        " as arguments, and return a value of the returned type");
               }
-              if (onError != null) {
-                if (onError is dynamic Function(Object, StackTrace)) {
-                  onError(error, stackTrace);
-                } else if (onError is dynamic Function(Object)) {
-                  onError(error);
-                } else {
-                  throw ArgumentError.value(
-                      onError,
-                      "onError",
-                      "Error handler must accept one Object or one Object and a StackTrace"
-                          " as arguments, and return a value of the returned type");
-                }
-              }
-            },
-            cancelOnError: cancelOnError,
-          );
-        }
+            }
+          },
+          cancelOnError: cancelOnError,
+        );
         onCreate?.call(notifier, lifecycle, cancellable);
       },
       onDispose: onDispose,
