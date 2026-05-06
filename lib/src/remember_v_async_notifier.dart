@@ -22,9 +22,14 @@ extension RememberAsyncValueNotifierAdvancedExt on BuildContext {
     Future<T> Function(Lifecycle)? fFactory2,
     Future<T> Function(Lifecycle, Cancellable)? fFactory3,
     Stream<T>? stream,
-    Stream<T> Function()? sfFactory,
+    @Deprecated('use sFactory, v2.6.2') Stream<T> Function()? sfFactory,
+    @Deprecated('use sFactory2, v2.6.2')
     Stream<T> Function(Lifecycle)? sfFactory2,
+    @Deprecated('use sFactory3, v2.6.2')
     Stream<T> Function(Lifecycle, Cancellable)? sfFactory3,
+    Stream<T> Function()? sFactory,
+    Stream<T> Function(Lifecycle)? sFactory2,
+    Stream<T> Function(Lifecycle, Cancellable)? sFactory3,
     bool? cancelOnError,
     void Function(ValueNotifier<AsyncData<T>>, Lifecycle, Cancellable)?
         onCreate,
@@ -54,6 +59,11 @@ extension RememberAsyncValueNotifierAdvancedExt on BuildContext {
         stream ??= sfFactory?.call();
         stream ??= sfFactory2?.call(lifecycle);
         stream ??= sfFactory3?.call(lifecycle, cancellable);
+
+        stream ??= sFactory?.call();
+        stream ??= sFactory2?.call(lifecycle);
+        stream ??= sFactory3?.call(lifecycle, cancellable);
+
         stream?.bindCancellable(cancellable, closeWhenCancel: true).listen(
             notifier.toValue,
             onError: notifier.toError,
@@ -77,9 +87,14 @@ extension RememberAsyncValueNotifierAdvancedExt on BuildContext {
     Future<T> Function(Lifecycle)? fFactory2,
     Future<T> Function(Lifecycle, Cancellable)? fFactory3,
     Stream<T>? stream,
-    Stream<T> Function()? sfFactory,
+    @Deprecated('use sFactory, v2.6.2') Stream<T> Function()? sfFactory,
+    @Deprecated('use sFactory2, v2.6.2')
     Stream<T> Function(Lifecycle)? sfFactory2,
+    @Deprecated('use sFactory3, v2.6.2')
     Stream<T> Function(Lifecycle, Cancellable)? sfFactory3,
+    Stream<T> Function()? sFactory,
+    Stream<T> Function(Lifecycle)? sFactory2,
+    Stream<T> Function(Lifecycle, Cancellable)? sFactory3,
     bool? cancelOnError,
     Function? onError,
     T Function(ValueNotifier<T>, Object error, StackTrace stackTrace)?
@@ -107,6 +122,10 @@ extension RememberAsyncValueNotifierAdvancedExt on BuildContext {
         stream ??= sfFactory?.call();
         stream ??= sfFactory2?.call(lifecycle);
         stream ??= sfFactory3?.call(lifecycle, cancellable);
+
+        stream ??= sFactory?.call();
+        stream ??= sFactory2?.call(lifecycle);
+        stream ??= sFactory3?.call(lifecycle, cancellable);
 
         stream?.bindCancellable(cancellable, closeWhenCancel: true).listen(
           (value) {

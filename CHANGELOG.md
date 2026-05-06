@@ -1,3 +1,7 @@
+## 2.6.2
+
+* rememberValueNotifierAsync Fix parameter naming.
+
 ## 2.6.1
 
 * rememberValueNotifierAsync adds functional creation of Streams and Futures.
