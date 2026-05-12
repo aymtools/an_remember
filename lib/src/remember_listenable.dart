@@ -6,6 +6,7 @@ import 'package:anlifecycle/anlifecycle.dart';
 import 'package:cancellable/cancellable.dart';
 import 'package:flutter/widgets.dart';
 import 'package:remember/src/remember.dart';
+import 'package:flutter/scheduler.dart' show SchedulerBinding, SchedulerPhase;
 
 extension RememberListenableExt on BuildContext {
   /// 快速生成一个可重用的 Listenable
@@ -32,18 +33,26 @@ extension RememberListenableExt on BuildContext {
         onCreate: (v, l, c) {
           if (listen && this is Element) {
             final rElement = WeakReference((this as Element));
-            v.addCListener(c, () {
-              final element = rElement.target;
-              if (element != null && element.mounted && !element.dirty) {
-                element.markNeedsBuild();
-              }
-            });
+            v.addCListener(c, () => _listenMarkNeedsBuild(rElement, c));
           }
           onCreate?.call(v, l, c);
         },
         onDispose: onDispose,
         key: key,
       );
+}
+
+void _listenMarkNeedsBuild(
+    WeakReference<Element> rElement, Cancellable c) async {
+  final element = rElement.target;
+
+  if (element == null || !element.mounted || element.dirty) return;
+
+  if (SchedulerBinding.instance.schedulerPhase != SchedulerPhase.idle) {
+    await SchedulerBinding.instance.endOfFrame;
+    if (!element.mounted || element.dirty || c.isUnavailable) return;
+  }
+  element.markNeedsBuild();
 }
 
 extension RememberChangeNotifierExt on BuildContext {
@@ -62,7 +71,7 @@ extension RememberChangeNotifierExt on BuildContext {
     bool listen = false,
     Object? key,
   }) =>
-      rememberListenable(
+      rememberListenable<T>(
           factory: factory,
           factory2: factory2,
           factory3: factory3,

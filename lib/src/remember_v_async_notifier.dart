@@ -37,7 +37,7 @@ extension RememberAsyncValueNotifierAdvancedExt on BuildContext {
     bool listen = false,
     Object? key,
   }) {
-    return rememberValueNotifier(
+    return rememberValueNotifier<AsyncData<T>>(
       factory: () {
         if (initialData != null || initialAllowNull) {
           return AsyncData<T>.value(initialData as T);
@@ -104,7 +104,7 @@ extension RememberAsyncValueNotifierAdvancedExt on BuildContext {
     bool listen = false,
     Object? key,
   }) {
-    return rememberValueNotifier(
+    return rememberValueNotifier<T>(
       factory: () => initialData,
       onCreate: (notifier, lifecycle, cancellable) {
         future ??= fFactory?.call();

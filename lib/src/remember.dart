@@ -285,7 +285,7 @@ extension BuildContextLifecycleRememberExt on BuildContext {
   /// 以当前[context] 记住该对象，并且以后将再次返回该对象
   /// * 调用顺序、[T]和 [key] 确定是否为同一个对象 如果发生了变化则重新创建
   /// * [factory],[factory2],[factory3]如何构建这个对象，不能同时为空, [factory] 优先级高于 [factory2] 优先于 [factory3]
-  /// * [onCreate] 创建完成时的处理
+  /// * [onCreate] 创建完成时的处理, [onCreate],[factory3] 中的[cancellable]如果被取消则不会进入记录，意味着下次更新
   /// * [onDispose] 定义销毁时如何处理，晚于[context]的[dispose],**非常注意：不可使用[context]相关内容**
   T remember<T extends Object>(
       {T Function()? factory,
