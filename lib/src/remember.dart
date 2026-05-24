@@ -179,12 +179,16 @@ class _RememberComposer extends RememberComposer {
     }
 
     final disposable = Cancellable();
-    var data = factory?.call() ??
-        factory2?.call(lifecycle) ??
-        factory3?.call(lifecycle, disposable);
-    if (data == null) {
+    T data;
+    if (factory != null) {
+      data = factory();
+    } else if (factory2 != null) {
+      data = factory2(lifecycle);
+    } else if (factory3 != null) {
+      data = factory3(lifecycle, disposable);
+    } else {
       throw Exception(
-          'factory and factory2 and factory3 cannot be null at the same time');
+          'remember<$T>() factory and factory2 and factory3 cannot be null at the same time');
     }
     final result = _RememberEntry<T>(data, key, disposable, onDispose);
 
@@ -279,6 +283,13 @@ class _RememberComposerObserver with LifecycleEventObserver {
     return _managers.putIfAbsent(context,
         () => _RememberComposer._(context, _lifecycle.target!, _finalizer!));
   }
+
+  static _RememberComposer _getComposer(BuildContext context) {
+    final lifecycle = Lifecycle.of(context);
+    final managers = _rememberComposers.putIfAbsent(
+        lifecycle.owner, () => _RememberComposerObserver(lifecycle));
+    return managers.getComposer(context);
+  }
 }
 
 extension BuildContextLifecycleRememberExt on BuildContext {
@@ -296,7 +307,7 @@ extension BuildContextLifecycleRememberExt on BuildContext {
       Object? key}) {
     if (factory == null && factory2 == null && factory3 == null) {
       throw Exception(
-          'factory and factory2 and factory3 cannot be null at the same time');
+          'remember<$T>() factory and factory2 and factory3 cannot be null at the same time');
     }
 
     if (!mounted) {
@@ -308,10 +319,7 @@ extension BuildContextLifecycleRememberExt on BuildContext {
       composer = _composer!;
     }
     if (composer == null) {
-      final lifecycle = Lifecycle.of(this);
-      final managers = _rememberComposers.putIfAbsent(
-          lifecycle.owner, () => _RememberComposerObserver(lifecycle));
-      composer = managers.getComposer(this);
+      composer = _RememberComposerObserver._getComposer(this);
       _currComposer = composer;
     }
     return composer._getOrCreate<T>(
