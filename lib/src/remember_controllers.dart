@@ -90,6 +90,12 @@ extension RememberControllersExt on BuildContext {
   TextEditingController rememberTextEditingController({
     TextEditingValue? value,
     String? text,
+    TextEditingValue Function()? vFactory,
+    TextEditingValue Function(Lifecycle)? vFactory2,
+    TextEditingValue Function(Lifecycle, Cancellable)? vFactory3,
+    String Function()? tFactory,
+    String Function(Lifecycle)? tFactory2,
+    String Function(Lifecycle, Cancellable)? tFactory3,
     void Function(TextEditingController, Lifecycle, Cancellable)? onCreate,
     FutureOr<void> Function(TextEditingController)? onDispose,
     bool listen = false,
@@ -99,6 +105,27 @@ extension RememberControllersExt on BuildContext {
         factory: () => value == null
             ? TextEditingController(text: text)
             : TextEditingController.fromValue(value),
+        factory3: (l, c) {
+          if (text != null) {
+            return TextEditingController(text: text);
+          } else if (tFactory != null) {
+            return TextEditingController(text: tFactory());
+          } else if (tFactory2 != null) {
+            return TextEditingController(text: tFactory2(l));
+          } else if (tFactory3 != null) {
+            return TextEditingController(text: tFactory3(l, c));
+          } else if (value != null) {
+            return TextEditingController.fromValue(value);
+          } else if (vFactory != null) {
+            return TextEditingController.fromValue(vFactory());
+          } else if (vFactory2 != null) {
+            return TextEditingController.fromValue(vFactory2(l));
+          } else if (vFactory3 != null) {
+            return TextEditingController.fromValue(vFactory3(l, c));
+          } else {
+            return TextEditingController();
+          }
+        },
         onCreate: onCreate,
         onDispose: onDispose,
         listen: listen,

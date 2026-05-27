@@ -115,8 +115,9 @@ extension RememberAsyncValueNotifierAdvancedExt on BuildContext {
         }).catchError((Object error, StackTrace stackTrace) {
           if (returnOnError != null) {
             notifier.value = returnOnError(notifier, error, stackTrace);
+          } else {
+            _runOnError<T>(notifier, onError, error, stackTrace);
           }
-          onError?.call(error, stackTrace);
         });
 
         stream ??= sfFactory?.call();
@@ -134,19 +135,8 @@ extension RememberAsyncValueNotifierAdvancedExt on BuildContext {
           onError: (Object error, StackTrace stackTrace) {
             if (returnOnError != null) {
               notifier.value = returnOnError(notifier, error, stackTrace);
-            }
-            if (onError != null) {
-              if (onError is dynamic Function(Object, StackTrace)) {
-                onError(error, stackTrace);
-              } else if (onError is dynamic Function(Object)) {
-                onError(error);
-              } else {
-                throw ArgumentError.value(
-                    onError,
-                    "onError",
-                    "Error handler must accept one Object or one Object and a StackTrace"
-                        " as arguments, and return a value of the returned type");
-              }
+            } else {
+              _runOnError<T>(notifier, onError, error, stackTrace);
             }
           },
           cancelOnError: cancelOnError,
@@ -158,5 +148,26 @@ extension RememberAsyncValueNotifierAdvancedExt on BuildContext {
       key: FlexibleKey('rememberValueNotifierAsync', initialData, future,
           stream, cancelOnError, key),
     );
+  }
+}
+
+void _runOnError<T>(ValueNotifier<T> notifier, Function? onError, Object error,
+    StackTrace stackTrace) {
+  if (onError != null) {
+    dynamic errResult;
+    if (onError is dynamic Function(Object, StackTrace)) {
+      errResult = onError(error, stackTrace);
+    } else if (onError is dynamic Function(Object)) {
+      errResult = onError(error);
+    } else {
+      throw ArgumentError.value(
+          onError,
+          "onError",
+          "Error handler must accept one Object or one Object and a StackTrace"
+              " as arguments");
+    }
+    if (errResult is T) {
+      notifier.value = errResult;
+    }
   }
 }
