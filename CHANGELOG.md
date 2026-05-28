@@ -1,3 +1,7 @@
+## 2.7.0
+
+* Added RememberCallbacks to support registering and listening for Entry creation callbacks.
+
 ## 2.6.2
 
 * rememberValueNotifierAsync Fix parameter naming.

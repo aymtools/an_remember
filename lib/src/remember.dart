@@ -5,6 +5,8 @@ import 'package:cancellable/cancellable.dart';
 import 'package:flutter/widgets.dart';
 import 'package:weak_collections/weak_collections.dart';
 
+part 'remember_callbacks.dart';
+
 class _RememberEntry<T> {
   final Cancellable _disposable;
   final T value;
@@ -237,6 +239,10 @@ class _RememberComposer extends RememberComposer {
     } else {
       final newEntry =
           _createEntry(factory, factory2, factory3, onCreate, onDispose, key);
+
+      // 通知回调创建完成
+      RememberCallbacks.instance._notifyEntryCreated(newEntry.value, _host!,
+          _lifecycle.target!, newEntry._disposable, currKey, key, T);
 
       entity?._disposable.cancel();
 
