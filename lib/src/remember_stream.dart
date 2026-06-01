@@ -174,6 +174,7 @@ extension RememeberStreamExt on BuildContext {
     void Function()? onResume,
     FutureOr<void> Function()? onCancel,
     bool sync = false,
+    void Function(StreamController<T>, Lifecycle, Cancellable)? onCreate,
     Object? key,
   }) {
     return remember<StreamController<T>>(
@@ -183,6 +184,7 @@ extension RememeberStreamExt on BuildContext {
           onResume: onResume,
           onCancel: onCancel,
           sync: sync),
+      onCreate: onCreate,
       onDispose: (s) => s.close(),
       key: FlexibleKey(sync, key),
     );
@@ -194,11 +196,13 @@ extension RememeberStreamExt on BuildContext {
     void Function()? onListen,
     FutureOr<void> Function()? onCancel,
     bool sync = false,
+    void Function(StreamController<T>, Lifecycle, Cancellable)? onCreate,
     Object? key,
   }) {
     return remember<StreamController<T>>(
       factory: () => StreamController<T>.broadcast(
           onListen: onListen, onCancel: onCancel, sync: sync),
+      onCreate: onCreate,
       onDispose: (s) => s.close(),
       key: FlexibleKey('broadcast', sync, key),
     );
