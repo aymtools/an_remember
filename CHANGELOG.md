@@ -1,3 +1,7 @@
+## 2.7.1
+
+* Fix `rememberTextEditingController` initialization priority between `value` and `text`.
+
 ## 2.7.0
 
 * Added RememberCallbacks to support registering and listening for Entry creation callbacks.
