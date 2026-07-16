@@ -1,12 +1,13 @@
 import 'dart:async';
 
 import 'package:an_async_data/an_async_data.dart';
+import 'package:an_lifecycle_cancellable/an_lifecycle_cancellable.dart'
+    show FlexibleKey;
 import 'package:anlifecycle/anlifecycle.dart';
 import 'package:cancellable/cancellable.dart';
 import 'package:flutter/widgets.dart';
 import 'package:remember/src/remember_listenable.dart';
-import 'package:an_lifecycle_cancellable/an_lifecycle_cancellable.dart'
-    show FlexibleKey;
+import 'package:remember/src/tools/run_on_error.dart';
 
 extension RememberAsyncValueNotifierAdvancedExt on BuildContext {
   /// 快速生成一个可重用的 ValueNotifier 类型为 AsyncData
@@ -35,6 +36,7 @@ extension RememberAsyncValueNotifierAdvancedExt on BuildContext {
         onCreate,
     FutureOr<void> Function(ValueNotifier<AsyncData<T>>)? onDispose,
     bool listen = false,
+    bool notifyWhenEquals = false,
     Object? key,
   }) {
     return rememberValueNotifier<AsyncData<T>>(
@@ -72,6 +74,7 @@ extension RememberAsyncValueNotifierAdvancedExt on BuildContext {
       },
       onDispose: onDispose,
       listen: listen,
+      notifyWhenEquals: notifyWhenEquals,
       key: FlexibleKey('rememberAsyncNotifier', initialData, initialAllowNull,
           error, stackTrace, future, stream, cancelOnError, key),
     );
@@ -102,6 +105,7 @@ extension RememberAsyncValueNotifierAdvancedExt on BuildContext {
     void Function(ValueNotifier<T>, Lifecycle, Cancellable)? onCreate,
     FutureOr<void> Function(ValueNotifier<T>)? onDispose,
     bool listen = false,
+    bool notifyWhenEquals = false,
     Object? key,
   }) {
     return rememberValueNotifier<T>(
@@ -116,7 +120,7 @@ extension RememberAsyncValueNotifierAdvancedExt on BuildContext {
           if (returnOnError != null) {
             notifier.value = returnOnError(notifier, error, stackTrace);
           } else {
-            _runOnError<T>(notifier, onError, error, stackTrace);
+            runOnErrorSetValue<T>(notifier, onError, error, stackTrace);
           }
         });
 
@@ -136,7 +140,7 @@ extension RememberAsyncValueNotifierAdvancedExt on BuildContext {
             if (returnOnError != null) {
               notifier.value = returnOnError(notifier, error, stackTrace);
             } else {
-              _runOnError<T>(notifier, onError, error, stackTrace);
+              runOnErrorSetValue<T>(notifier, onError, error, stackTrace);
             }
           },
           cancelOnError: cancelOnError,
@@ -145,29 +149,9 @@ extension RememberAsyncValueNotifierAdvancedExt on BuildContext {
       },
       onDispose: onDispose,
       listen: listen,
+      notifyWhenEquals: notifyWhenEquals,
       key: FlexibleKey('rememberValueNotifierAsync', initialData, future,
           stream, cancelOnError, key),
     );
-  }
-}
-
-void _runOnError<T>(ValueNotifier<T> notifier, Function? onError, Object error,
-    StackTrace stackTrace) {
-  if (onError != null) {
-    dynamic errResult;
-    if (onError is dynamic Function(Object, StackTrace)) {
-      errResult = onError(error, stackTrace);
-    } else if (onError is dynamic Function(Object)) {
-      errResult = onError(error);
-    } else {
-      throw ArgumentError.value(
-          onError,
-          "onError",
-          "Error handler must accept one Object or one Object and a StackTrace"
-              " as arguments");
-    }
-    if (errResult is T) {
-      notifier.value = errResult;
-    }
   }
 }

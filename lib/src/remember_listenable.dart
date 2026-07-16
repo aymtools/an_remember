@@ -6,7 +6,7 @@ import 'package:anlifecycle/anlifecycle.dart';
 import 'package:cancellable/cancellable.dart';
 import 'package:flutter/widgets.dart';
 import 'package:remember/src/remember.dart';
-import 'package:flutter/scheduler.dart' show SchedulerBinding, SchedulerPhase;
+import 'package:remember/src/tools/element_safe.dart';
 
 extension RememberListenableExt on BuildContext {
   /// 快速生成一个可重用的 Listenable
@@ -31,28 +31,15 @@ extension RememberListenableExt on BuildContext {
         factory2: factory2,
         factory3: factory3,
         onCreate: (v, l, c) {
-          if (listen && this is Element) {
-            final rElement = WeakReference((this as Element));
-            v.addCListener(c, () => _listenMarkNeedsBuild(rElement, c));
+          if (listen) {
+            v.addCListener(
+                c, safeMarkNeedsBuildVoidListener(this, cancellable: c));
           }
           onCreate?.call(v, l, c);
         },
         onDispose: onDispose,
         key: key,
       );
-}
-
-void _listenMarkNeedsBuild(
-    WeakReference<Element> rElement, Cancellable c) async {
-  final element = rElement.target;
-
-  if (element == null || !element.mounted || element.dirty) return;
-
-  if (SchedulerBinding.instance.schedulerPhase != SchedulerPhase.idle) {
-    await SchedulerBinding.instance.endOfFrame;
-    if (!element.mounted || element.dirty || c.isUnavailable) return;
-  }
-  element.markNeedsBuild();
 }
 
 extension RememberChangeNotifierExt on BuildContext {
@@ -97,6 +84,7 @@ extension RememberValueNotifierExt on BuildContext {
     void Function(ValueNotifier<T>, Lifecycle, Cancellable)? onCreate,
     FutureOr<void> Function(ValueNotifier<T>)? onDispose,
     bool listen = false,
+    bool notifyWhenEquals = false,
     Object? key,
   }) =>
       rememberChangeNotifier<ValueNotifier<T>>(
@@ -108,7 +96,7 @@ extension RememberValueNotifierExt on BuildContext {
           value ??= factory?.call();
           value ??= factory2?.call(l);
           value ??= factory3?.call(l, c);
-          return CancellableValueNotifier(value as T, c);
+          return CancellableValueNotifier(value as T, c, notifyWhenEquals);
         },
         onCreate: onCreate,
         onDispose: onDispose,

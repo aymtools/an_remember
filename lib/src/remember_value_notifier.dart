@@ -11,6 +11,7 @@ extension RememberValueNotifierAdvancedExt on BuildContext {
       {required ValueNotifier<S> source,
       required R Function(S) transformer,
       bool listen = false,
+      bool notifyWhenEquals = false,
       Object? key}) {
     return rememberValueNotifier(
       factory: () => transformer(source.value),
@@ -20,6 +21,7 @@ extension RememberValueNotifierAdvancedExt on BuildContext {
         });
       },
       listen: listen,
+      notifyWhenEquals: notifyWhenEquals,
       key: FlexibleKey('rememberValueNotifierTransform', source, key),
     );
   }
@@ -32,6 +34,7 @@ extension RememberValueNotifierAdvancedExt on BuildContext {
       required ValueNotifier<S2> s2,
       required R Function(S1, S2) merger,
       bool listen = false,
+      bool notifyWhenEquals = false,
       Object? key}) {
     return rememberValueNotifier(
       factory: () => merger(s1.value, s2.value),
@@ -44,6 +47,7 @@ extension RememberValueNotifierAdvancedExt on BuildContext {
         s2.addCListener(c, listener);
       },
       listen: listen,
+      notifyWhenEquals: notifyWhenEquals,
       key: FlexibleKey(s1, s2, 'rememberValueNotifierMerge', s1, s2, key),
     );
   }
@@ -57,6 +61,7 @@ extension RememberValueNotifierAdvancedExt on BuildContext {
       required ValueNotifier<S3> s3,
       required R Function(S1, S2, S3) merger,
       bool listen = false,
+      bool notifyWhenEquals = false,
       Object? key}) {
     return rememberValueNotifier(
       factory: () => merger(s1.value, s2.value, s3.value),
@@ -70,6 +75,7 @@ extension RememberValueNotifierAdvancedExt on BuildContext {
         s3.addCListener(c, listener);
       },
       listen: listen,
+      notifyWhenEquals: notifyWhenEquals,
       key: FlexibleKey('rememberValueNotifierMerge3', s1, s2, s3, key),
     );
   }
@@ -84,6 +90,7 @@ extension RememberValueNotifierAdvancedExt on BuildContext {
       required ValueNotifier<S4> s4,
       required R Function(S1, S2, S3, S4) merger,
       bool listen = false,
+      bool notifyWhenEquals = false,
       Object? key}) {
     return rememberValueNotifier(
       factory: () => merger(s1.value, s2.value, s3.value, s4.value),
@@ -98,6 +105,7 @@ extension RememberValueNotifierAdvancedExt on BuildContext {
         s4.addCListener(c, listener);
       },
       listen: listen,
+      notifyWhenEquals: notifyWhenEquals,
       key: FlexibleKey('rememberValueNotifierMerge4', s1, s2, s3, s4, key),
     );
   }
@@ -113,6 +121,7 @@ extension RememberValueNotifierAdvancedExt on BuildContext {
       required ValueNotifier<S5> s5,
       required R Function(S1, S2, S3, S4, S5) merger,
       bool listen = false,
+      bool notifyWhenEquals = false,
       Object? key}) {
     return rememberValueNotifier(
       factory: () => merger(s1.value, s2.value, s3.value, s4.value, s5.value),
@@ -128,6 +137,7 @@ extension RememberValueNotifierAdvancedExt on BuildContext {
         s5.addCListener(c, listener);
       },
       listen: listen,
+      notifyWhenEquals: notifyWhenEquals,
       key: FlexibleKey('rememberValueNotifierMerge5', s1, s2, s3, s4, s5, key),
     );
   }
@@ -144,6 +154,7 @@ extension RememberValueNotifierAdvancedExt on BuildContext {
       required ValueNotifier<S6> s6,
       required R Function(S1, S2, S3, S4, S5, S6) merger,
       bool listen = false,
+      bool notifyWhenEquals = false,
       Object? key}) {
     return rememberValueNotifier(
       factory: () =>
@@ -162,6 +173,7 @@ extension RememberValueNotifierAdvancedExt on BuildContext {
         s6.addCListener(c, listener);
       },
       listen: listen,
+      notifyWhenEquals: notifyWhenEquals,
       key: FlexibleKey(
           'rememberValueNotifierMerge6', s1, s2, s3, s4, s5, s6, key),
     );
@@ -180,6 +192,7 @@ extension RememberValueNotifierAdvancedExt on BuildContext {
       required ValueNotifier<S7> s7,
       required R Function(S1, S2, S3, S4, S5, S6, S7) merger,
       bool listen = false,
+      bool notifyWhenEquals = false,
       Object? key}) {
     return rememberValueNotifier(
       factory: () => merger(
@@ -199,6 +212,7 @@ extension RememberValueNotifierAdvancedExt on BuildContext {
         s7.addCListener(c, listener);
       },
       listen: listen,
+      notifyWhenEquals: notifyWhenEquals,
       key: FlexibleKey(
           'rememberValueNotifierMerge7', s1, s2, s3, s4, s5, s6, s7, key),
     );
@@ -219,6 +233,7 @@ extension RememberValueNotifierAdvancedExt on BuildContext {
           required ValueNotifier<S8> s8,
           required R Function(S1, S2, S3, S4, S5, S6, S7, S8) merger,
           bool listen = false,
+          bool notifyWhenEquals = false,
           Object? key}) {
     return rememberValueNotifier(
       factory: () => merger(s1.value, s2.value, s3.value, s4.value, s5.value,
@@ -239,6 +254,7 @@ extension RememberValueNotifierAdvancedExt on BuildContext {
         s8.addCListener(c, listener);
       },
       listen: listen,
+      notifyWhenEquals: notifyWhenEquals,
       key: FlexibleKey(
           'rememberValueNotifierMerge8', s1, s2, s3, s4, s5, s6, s7, s8, key),
     );
@@ -260,6 +276,7 @@ extension RememberValueNotifierAdvancedExt on BuildContext {
           required ValueNotifier<S9> s9,
           required R Function(S1, S2, S3, S4, S5, S6, S7, S8, S9) merger,
           bool listen = false,
+          bool notifyWhenEquals = false,
           Object? key}) {
     return rememberValueNotifier(
       factory: () => merger(s1.value, s2.value, s3.value, s4.value, s5.value,
@@ -281,6 +298,7 @@ extension RememberValueNotifierAdvancedExt on BuildContext {
         s9.addCListener(c, listener);
       },
       listen: listen,
+      notifyWhenEquals: notifyWhenEquals,
       key: FlexibleKey('rememberValueNotifierMerge9', s1, s2, s3, s4, s5, s6,
           s7, s8, s9, key),
     );
