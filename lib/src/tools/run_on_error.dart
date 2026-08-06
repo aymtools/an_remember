@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 
-void runOnErrorSetValue<T>(ValueNotifier<T> notifier, Function? onError, Object error, StackTrace stackTrace) {
+void runOnErrorSetValue<T>(ValueNotifier<T> notifier, Function? onError,
+    Object error, StackTrace stackTrace) {
   if (onError != null) {
     dynamic errResult;
     if (onError is dynamic Function(Object, StackTrace)) {
