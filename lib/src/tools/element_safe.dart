@@ -9,7 +9,9 @@ void elementSafeMarkNeedsBuild(WeakReference<Element> rElement,
   if (element == null ||
       !element.mounted ||
       element.dirty ||
-      cancellable?.isUnavailable == true) return;
+      cancellable?.isUnavailable == true) {
+    return;
+  }
 
   if (SchedulerBinding.instance.schedulerPhase != SchedulerPhase.idle) {
     await SchedulerBinding.instance.endOfFrame;
