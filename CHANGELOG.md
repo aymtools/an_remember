@@ -1,3 +1,9 @@
+## 2.8.0
+
+* rememberAsyncNotifierAsyncTransform: Added async transformation support for async notifiers.
+* ValueNotifier: Added notifyWhenEquals parameter to control notification behavior when
+  the new value equals the old value.
+
 ## 2.7.1
 
 * Fix `rememberTextEditingController` initialization priority between `value` and `text`.
