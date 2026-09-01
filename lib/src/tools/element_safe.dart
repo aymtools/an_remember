@@ -26,7 +26,9 @@ void elementSafeMarkNeedsBuild(WeakReference<Element> rElement,
 
 void Function() safeMarkNeedsBuildVoidListener(BuildContext context,
     {Cancellable? cancellable}) {
-  if (context is! Element || cancellable?.isUnavailable == true) return () {};
+  if (context is! Element || cancellable?.isUnavailable == true) {
+    return () {};
+  }
   final rElement = WeakReference(context);
   return () {
     elementSafeMarkNeedsBuild(rElement, cancellable: cancellable);
