@@ -88,7 +88,7 @@ extension RememberValueNotifierAdvancedAsyncTransformExt on BuildContext {
         Future<void> runTransformer() async {
           await Future.value(transformer(source.value, transforming))
               .bindCancellable(transforming)
-              .then((v) => d.value = v,
+              .then<void>((v) => d.value = v,
                   onError: (Object error, StackTrace stackTrace) {
             if (returnOnError != null) {
               d.value = returnOnError(d, error, stackTrace);
