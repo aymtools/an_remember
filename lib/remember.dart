@@ -10,3 +10,4 @@ export 'src/remember_stream.dart';
 export 'src/remember_timer.dart';
 export 'src/remember_value_notifier.dart';
 export 'src/remember_v_async_notifier.dart';
+export 'src/remember_value_notifier_async_transform.dart';

@@ -55,8 +55,7 @@ extension RememberAsyncValueNotifierAdvancedExt on BuildContext {
         future ??= fFactory3?.call(lifecycle, cancellable);
         future
             ?.bindCancellable(cancellable)
-            .then(notifier.toValue)
-            .catchError(notifier.toError);
+            .then(notifier.toValue, onError: notifier.toError);
 
         stream ??= sfFactory?.call();
         stream ??= sfFactory2?.call(lifecycle);
@@ -114,9 +113,9 @@ extension RememberAsyncValueNotifierAdvancedExt on BuildContext {
         future ??= fFactory?.call();
         future ??= fFactory2?.call(lifecycle);
         future ??= fFactory3?.call(lifecycle, cancellable);
-        future?.bindCancellable(cancellable).then((value) {
+        future?.bindCancellable(cancellable).then<void>((value) {
           notifier.value = value;
-        }).catchError((Object error, StackTrace stackTrace) {
+        }, onError: (Object error, StackTrace stackTrace) {
           if (returnOnError != null) {
             notifier.value = returnOnError(notifier, error, stackTrace);
           } else {

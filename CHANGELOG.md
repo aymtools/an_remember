@@ -1,3 +1,7 @@
+## 2.8.1
+
+* Export rememberAsyncNotifierAsyncTransform.
+
 ## 2.8.0
 
 * rememberAsyncNotifierAsyncTransform: Added async transformation support for async notifiers.

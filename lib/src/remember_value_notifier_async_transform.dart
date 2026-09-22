@@ -21,20 +21,22 @@ extension RememberValueNotifierAdvancedAsyncTransformExt on BuildContext {
       bool listen = false,
       bool notifyWhenEquals = false,
       bool? cancelPreviousOnSourceChange,
+      Cancellable? cancellable,
       Object? key}) {
     return rememberAsyncNotifier<R>(
       initialData: initialData,
       initialAllowNull: initialAllowNull,
       onCreate: (d, l, c) {
-        Cancellable transforming = c.makeCancellable();
+        Cancellable transforming = c.makeCancellable(father: cancellable);
 
         void Function() startTransformer;
 
         Future<void> runTransformer() async {
-          await Future.value(transformer(source.value, transforming))
+          await (Future.value(transformer(source.value,
+                      transforming.makeCancellable(weakRef: false)))
+                  as Future<dynamic>)
               .bindCancellable(transforming)
-              .then(d.toValue)
-              .catchError(d.toError);
+              .then<void>((v) => d.toValue(v as R), onError: d.toError);
         }
 
         if (cancelPreviousOnSourceChange == null) {
@@ -42,7 +44,7 @@ extension RememberValueNotifierAdvancedAsyncTransformExt on BuildContext {
         } else if (cancelPreviousOnSourceChange) {
           startTransformer = () {
             transforming.cancel();
-            transforming = c.makeCancellable();
+            transforming = c.makeCancellable(father: cancellable);
             runTransformer();
           };
         } else {
@@ -75,6 +77,7 @@ extension RememberValueNotifierAdvancedAsyncTransformExt on BuildContext {
       bool listen = false,
       bool notifyWhenEquals = false,
       bool? cancelPreviousOnSourceChange,
+      Cancellable? cancellable,
       Function? onError,
       R Function(ValueNotifier<R>, Object error, StackTrace stackTrace)?
           returnOnError,
@@ -82,13 +85,15 @@ extension RememberValueNotifierAdvancedAsyncTransformExt on BuildContext {
     return rememberValueNotifier<R>(
       value: initialData,
       onCreate: (d, l, c) {
-        Cancellable transforming = c.makeCancellable();
+        Cancellable transforming = c.makeCancellable(father: cancellable);
 
         void Function() startTransformer;
         Future<void> runTransformer() async {
-          await Future.value(transformer(source.value, transforming))
+          await (Future.value(transformer(source.value,
+                      transforming.makeCancellable(weakRef: false)))
+                  as Future<dynamic>)
               .bindCancellable(transforming)
-              .then<void>((v) => d.value = v,
+              .then<void>((v) => d.value = v as R,
                   onError: (Object error, StackTrace stackTrace) {
             if (returnOnError != null) {
               d.value = returnOnError(d, error, stackTrace);
@@ -103,7 +108,7 @@ extension RememberValueNotifierAdvancedAsyncTransformExt on BuildContext {
         } else if (cancelPreviousOnSourceChange) {
           startTransformer = () {
             transforming.cancel();
-            transforming = c.makeCancellable();
+            transforming = c.makeCancellable(father: cancellable);
             runTransformer();
           };
         } else {
