@@ -36,7 +36,7 @@ extension RememberValueNotifierAdvancedAsyncTransformExt on BuildContext {
                       transforming.makeCancellable(weakRef: false)))
                   as Future<dynamic>)
               .bindCancellable(transforming)
-              .then<void>((v) => d.toValue(v as R), onError: d.toError);
+              .then<void>((v) => d.toData(v as R), onError: d.toError);
         }
 
         if (cancelPreviousOnSourceChange == null) {

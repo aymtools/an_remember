@@ -42,7 +42,7 @@ extension RememberAsyncValueNotifierAdvancedExt on BuildContext {
     return rememberValueNotifier<AsyncData<T>>(
       factory: () {
         if (initialData != null || initialAllowNull) {
-          return AsyncData<T>.value(initialData as T);
+          return AsyncData<T>.data(initialData as T);
         } else if (error != null) {
           return AsyncData<T>.error(error, stackTrace);
         } else {
@@ -55,7 +55,7 @@ extension RememberAsyncValueNotifierAdvancedExt on BuildContext {
         future ??= fFactory3?.call(lifecycle, cancellable);
         future
             ?.bindCancellable(cancellable)
-            .then(notifier.toValue, onError: notifier.toError);
+            .then(notifier.toData, onError: notifier.toError);
 
         stream ??= sfFactory?.call();
         stream ??= sfFactory2?.call(lifecycle);
@@ -66,7 +66,7 @@ extension RememberAsyncValueNotifierAdvancedExt on BuildContext {
         stream ??= sFactory3?.call(lifecycle, cancellable);
 
         stream?.bindCancellable(cancellable, closeWhenCancel: true).listen(
-            notifier.toValue,
+            notifier.toData,
             onError: notifier.toError,
             cancelOnError: cancelOnError);
         onCreate?.call(notifier, lifecycle, cancellable);
