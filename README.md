@@ -94,6 +94,7 @@ class HomeRememberDemo extends StatelessWidget {
   /// * The call order, [key], [initialIndex], [animationDuration],
   ///   and [length] determine whether it is considered the same object.
   ///   If any of these change, a new object will be created.
+  @Deprecated('use package:an_lifecycle_material_ext')
   TabController rememberTabController({
     int initialIndex = 0,
     Duration? animationDuration,

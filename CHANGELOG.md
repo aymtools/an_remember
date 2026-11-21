@@ -1,3 +1,8 @@
+## 2.8.2
+
+* Deprecate `rememberTabController` in favor of `package:an_lifecycle_material_ext`.
+* Decouple `material.dart` dependency from `remember_scroll_controllers.dart` (now depends on `widgets.dart`).
+
 ## 2.8.1
 
 * Export rememberAsyncNotifierAsyncTransform.

@@ -8,6 +8,7 @@ export 'src/remember_listenable.dart';
 export 'src/remember_scroll_controllers.dart';
 export 'src/remember_stream.dart';
 export 'src/remember_timer.dart';
-export 'src/remember_value_notifier.dart';
 export 'src/remember_v_async_notifier.dart';
+export 'src/remember_value_notifier.dart';
 export 'src/remember_value_notifier_async_transform.dart';
+export 'src/tools/material_support.dart';
